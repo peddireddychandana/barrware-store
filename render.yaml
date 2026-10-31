@@ -1,0 +1,61 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
+# MongoDB is not hosted by Render: create a free MongoDB Atlas cluster and paste its URI into MONGO_URI.
+services:
+  - type: web
+    name: barware-store-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.18.0
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Public URL of the client service, e.g. https://barware-store-client.onrender.com
+      - key: CLIENT_URL
+        sync: false
+      # Public URL of this API service, e.g. https://barware-store-api.onrender.com
+      - key: SERVER_URL
+        sync: false
+      # Optional: set all three to store admin-uploaded images on Cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+  - type: web
+    name: barware-store-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      # Single-page app: serve index.html for every path so refreshes and deep links work
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 24.18.0
+      # Must include /api, e.g. https://barware-store-api.onrender.com/api (baked in at build time)
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_STORE_ADDRESS
+        sync: false
+      - key: VITE_STORE_PHONE
+        sync: false
+      - key: VITE_STORE_EMAIL
+        sync: false
