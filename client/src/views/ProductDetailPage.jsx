@@ -135,11 +135,6 @@ const ProductDetailPage = () => {
   };
 
   const handleBuyNow = async () => {
-    if (!isLoggedIn) {
-      toast.info("Please sign in to place your order");
-      openLoginModal();
-      return;
-    }
     setIsBusy(true);
     const added = await addToCart(product, quantity);
     setIsBusy(false);
