@@ -89,8 +89,6 @@ export const orderService = {
         { params: token ? { token } : {} },
       ),
     ),
-  requestReturn: (id, body) => data(api.post(`/orders/${id}/returns`, body)),
-  myReturns: () => page(api.get("/returns/my")),
 };
 
 export const paymentService = {
@@ -116,8 +114,6 @@ export const adminService = {
   createCoupon: (body) => data(api.post("/admin/coupons", body)),
   updateCoupon: (id, body) => data(api.put(`/admin/coupons/${id}`, body)),
   deleteCoupon: (id) => data(api.delete(`/admin/coupons/${id}`)),
-  returns: (params) => page(api.get("/admin/returns", { params })),
-  updateReturn: (id, body) => data(api.put(`/admin/returns/${id}`, body)),
   inquiries: (params) => page(api.get("/admin/inquiries", { params })),
   updateInquiry: (id, body) => data(api.put(`/admin/inquiries/${id}`, body)),
   subscribers: (params) => page(api.get("/admin/subscribers", { params })),

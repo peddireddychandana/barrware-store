@@ -13,7 +13,6 @@ const payments = require("../controllers/paymentController");
 const misc = require("../controllers/miscController");
 const wishlist = require("../controllers/wishlistController");
 const addresses = require("../controllers/addressController");
-const returns = require("../controllers/returnController");
 const inquiries = require("../controllers/inquiryController");
 const coupons = require("../controllers/couponController");
 const reports = require("../controllers/reportsController");
@@ -130,14 +129,6 @@ router.post(
   orders.submitPayment,
 );
 
-router.post(
-  "/orders/:id/returns",
-  protect,
-  validate(schemas.returnCreate),
-  returns.create,
-);
-router.get("/returns/my", protect, returns.my);
-
 router.get("/wishlist", protect, wishlist.get);
 router.post(
   "/wishlist/toggle",
@@ -224,14 +215,6 @@ router.put(
   coupons.update,
 );
 router.delete("/admin/coupons/:id", ...adminOnly, coupons.remove);
-
-router.get("/admin/returns", ...adminOnly, returns.adminList);
-router.put(
-  "/admin/returns/:id",
-  ...adminOnly,
-  validate(schemas.returnStatus),
-  returns.adminUpdate,
-);
 
 router.get("/admin/inquiries", ...adminOnly, inquiries.adminList);
 router.put(

@@ -8,6 +8,5 @@ module.exports = {
   Subscriber: require("./Subscriber"),
   Coupon: require("./Coupon"),
   Wishlist: require("./Wishlist"),
-  ReturnRequest: require("./ReturnRequest"),
   Inquiry: require("./Inquiry"),
 };

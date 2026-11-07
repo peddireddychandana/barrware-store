@@ -197,23 +197,6 @@ module.exports = {
     number: z.string().trim().max(120).optional().default(""),
     url: z.string().trim().max(500).optional().default(""),
   }),
-  returnCreate: z.object({
-    reason: z.string().trim().min(3, "Tell us why you are returning this").max(500),
-    items: z
-      .array(
-        z.object({
-          productId: objectId,
-          quantity: z.coerce.number().int().min(1).max(50),
-        }),
-      )
-      .min(1, "Select at least one item")
-      .max(100),
-  }),
-  returnStatus: z.object({
-    status: z.enum(["approved", "rejected", "received", "refunded"]),
-    note: z.string().trim().max(300).optional(),
-    refundAmount: z.coerce.number().min(0).optional(),
-  }),
   couponPayload: z.object({
     code: z
       .string()

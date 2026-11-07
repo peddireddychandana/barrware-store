@@ -14,7 +14,6 @@ const ADMIN_LINKS = [
   { label: "Orders", href: "/admin/orders" },
   { label: "Customers", href: "/admin/customers" },
   { label: "Coupons", href: "/admin/coupons" },
-  { label: "Returns", href: "/admin/returns" },
   { label: "Inquiries", href: "/admin/inquiries" },
   { label: "Reviews", href: "/admin/reviews" },
   { label: "Reports", href: "/admin/reports" },

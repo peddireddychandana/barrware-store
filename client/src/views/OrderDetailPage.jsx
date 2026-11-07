@@ -9,7 +9,6 @@ import {
   FileText,
   Loader2,
   QrCode,
-  RotateCcw,
   Truck,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -193,108 +192,6 @@ const TrackingCard = ({ order }) => {
   );
 };
 
-const ReturnForm = ({ order, onDone }) => {
-  const { isLoggedIn, openLoginModal } = useAuth();
-  const [reason, setReason] = useState("");
-  const [quantities, setQuantities] = useState(() =>
-    Object.fromEntries(order.items.map((item, index) => [index, 0])),
-  );
-
-  const request = useMutation({
-    mutationFn: () =>
-      orderService.requestReturn(order._id, {
-        reason: reason.trim(),
-        items: order.items
-          .map((item, index) => ({
-            productId: item.product,
-            quantity: quantities[index],
-          }))
-          .filter((item) => item.quantity > 0),
-      }),
-    onSuccess: () => {
-      toast.success("Return request submitted. We will review it shortly.");
-      setReason("");
-      setQuantities(Object.fromEntries(order.items.map((_item, index) => [index, 0])));
-      onDone?.();
-    },
-    onError: (error) => toast.error(getErrorMessage(error)),
-  });
-
-  if (order.status !== "delivered") return null;
-
-  const totalSelected = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
-
-  return (
-    <Card title="RETURN OR EXCHANGE">
-      {!isLoggedIn ? (
-        <div className="text-sm text-muted-foreground">
-          <p className="mb-3">Sign in to raise a return request for this order.</p>
-          <button
-            onClick={openLoginModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-primary text-primary text-xs font-semibold uppercase tracking-widest hover:bg-primary/10 transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" /> Sign in
-          </button>
-        </div>
-      ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!reason.trim()) return toast.error("Tell us why you are returning this");
-            if (totalSelected === 0) return toast.error("Select at least one item");
-            request.mutate();
-          }}
-          className="space-y-4"
-        >
-          <p className="text-sm text-muted-foreground">
-            Returns are accepted within 7 days of delivery. Choose the items and quantity you
-            want to return.
-          </p>
-          <ul className="space-y-2">
-            {order.items.map((item, index) => (
-              <li key={`${item.product}-${index}`} className="flex items-center gap-3 text-sm">
-                <img src={item.image} alt="" className="w-10 h-10 rounded object-cover bg-secondary" />
-                <span className="flex-1 line-clamp-1">{item.name}</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={item.quantity}
-                  value={quantities[index]}
-                  onChange={(e) =>
-                    setQuantities((prev) => ({
-                      ...prev,
-                      [index]: Math.max(0, Math.min(item.quantity, Number(e.target.value) || 0)),
-                    }))
-                  }
-                  className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-center"
-                  aria-label={`Quantity of ${item.name} to return`}
-                />
-                <span className="text-xs text-muted-foreground">of {item.quantity}</span>
-              </li>
-            ))}
-          </ul>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-            maxLength={500}
-            placeholder="Reason for return (e.g. damaged in transit)"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={request.isPending}
-            className="inline-flex items-center justify-center gap-2 gradient-neon text-primary-foreground px-6 py-2.5 text-xs font-semibold uppercase tracking-widest rounded-full disabled:opacity-60"
-          >
-            {request.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            Submit return request
-          </button>
-        </form>
-      )}
-    </Card>
-  );
-};
-
 const OrderDetail = ({ id, token }) => {
   const { isLoggedIn } = useAuth();
   const queryClient = useQueryClient();
@@ -456,8 +353,6 @@ const OrderDetail = ({ id, token }) => {
             </Card>
             <PaymentSection order={order} onUpdated={refreshOrder} token={token} />
           </div>
-
-          <ReturnForm order={order} onDone={refreshOrder} />
         </div>
 
         <div className="space-y-8">

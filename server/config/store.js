@@ -15,9 +15,6 @@ module.exports = {
   UPI_PAYMENT_WINDOW_MINUTES:
     Number(process.env.UPI_PAYMENT_WINDOW_MINUTES) || 60,
 
-  /** Days after delivery in which a return can be requested. */
-  RETURN_WINDOW_DAYS: Number(process.env.RETURN_WINDOW_DAYS) || 7,
-
   PRODUCT_TYPES: {
     "cocktail-shaker": "Cocktail Shaker",
     "hawthorne-strainer": "Hawthorne Strainer",
