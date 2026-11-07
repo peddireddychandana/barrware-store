@@ -151,6 +151,19 @@ describe("auth", () => {
     ).toBe(200);
   });
 
+  it("returns a bearer token that authenticates without cookies", async () => {
+    const login = await request(app)
+      .post("/api/auth/login")
+      .send({ email: newUser.email, password: "NewPassword1" });
+    expect(login.status).toBe(200);
+    expect(login.body.data.token).toEqual(expect.any(String));
+    const me = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${login.body.data.token}`);
+    expect(me.status).toBe(200);
+    expect(me.body.data.email).toBe(newUser.email);
+  });
+
   it("admin routes: 401 anonymous, 403 customer, 200 admin", async () => {
     expect((await request(app).get("/api/admin/dashboard")).status).toBe(401);
     const customer = await loginAs(CUSTOMER);

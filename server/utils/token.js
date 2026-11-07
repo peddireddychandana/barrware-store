@@ -6,7 +6,7 @@ const COOKIE_NAME = "token";
 const signToken = (userId) =>
   jwt.sign({ id: userId }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 
-/** Signs a JWT and sets it as an HTTP-only cookie whose lifetime matches the token. */
+/** Signs a JWT, sets it as an HTTP-only cookie and returns it as a bearer fallback. */
 function attachAuthCookie(res, userId) {
   const token = signToken(userId);
   const { exp } = jwt.decode(token);
@@ -17,6 +17,7 @@ function attachAuthCookie(res, userId) {
     maxAge: exp * 1000 - Date.now(),
     path: "/",
   });
+  return token;
 }
 
 const clearAuthCookie = (res) =>

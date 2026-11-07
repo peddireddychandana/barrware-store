@@ -1,13 +1,27 @@
-import api from "./api";
+import api, { setStoredToken } from "./api";
 
 const data = (request) => request.then((res) => res.data.data);
 const page = (request) =>
   request.then((res) => ({ items: res.data.data, pagination: res.data.pagination }));
 
+/** Stores the bearer fallback token and returns the user without it. */
+const authUser = (request) =>
+  request.then((res) => {
+    const { token, ...user } = res.data.data ?? {};
+    if (token) setStoredToken(token);
+    return user;
+  });
+
 export const authService = {
-  register: (body) => data(api.post("/auth/register", body)),
-  login: (body) => data(api.post("/auth/login", body)),
-  logout: () => data(api.post("/auth/logout")),
+  register: (body) => authUser(api.post("/auth/register", body)),
+  login: (body) => authUser(api.post("/auth/login", body)),
+  logout: async () => {
+    try {
+      return await data(api.post("/auth/logout"));
+    } finally {
+      setStoredToken(null);
+    }
+  },
   me: () => data(api.get("/auth/me")),
   updateProfile: (body) => data(api.put("/auth/me", body)),
   forgotPassword: (body) => data(api.post("/auth/forgot-password", body)),

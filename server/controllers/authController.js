@@ -16,8 +16,11 @@ exports.register = async (req, res) => {
       { field: "email", message: "Email already registered" },
     ]);
   const user = await User.create({ name, email, password, role: "customer" });
-  attachAuthCookie(res, user._id);
-  sendSuccess(res, user, { status: 201, message: "Registration successful" });
+  const token = attachAuthCookie(res, user._id);
+  sendSuccess(res, { ...user.toJSON(), token }, {
+    status: 201,
+    message: "Registration successful",
+  });
 };
 
 exports.login = async (req, res) => {
@@ -26,8 +29,8 @@ exports.login = async (req, res) => {
   );
   if (!user || !(await user.comparePassword(req.body.password)))
     throw new AppError("Invalid email or password", 401);
-  attachAuthCookie(res, user._id);
-  sendSuccess(res, user, { message: "Login successful" });
+  const token = attachAuthCookie(res, user._id);
+  sendSuccess(res, { ...user.toJSON(), token }, { message: "Login successful" });
 };
 
 exports.logout = (_req, res) => {
