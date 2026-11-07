@@ -15,7 +15,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { orderService } from "@/services";
+import { orderService, paymentService } from "@/services";
 import { getErrorMessage } from "@/services/api";
 import { formatPrice } from "@/utils/format";
 import {
@@ -52,7 +52,7 @@ const PaymentBadge = ({ status }) => (
   </span>
 );
 
-const PaymentSection = ({ order, onUpdated, token }) => {
+const PaymentSection = ({ order, onUpdated, token, upiId }) => {
   const [reference, setReference] = useState(order.paymentReference || "");
 
   const submit = useMutation({
@@ -116,7 +116,16 @@ const PaymentSection = ({ order, onUpdated, token }) => {
                 {formatPrice(order.summary.total)}
               </p>
               <p className="text-xs text-muted-foreground mt-1">Order {order.orderNumber}</p>
+              {upiId && (
+                <p className="text-xs text-muted-foreground mt-1 font-mono">UPI ID: {upiId}</p>
+              )}
             </div>
+            <a
+              href={order.upiUri}
+              className="inline-flex items-center justify-center gap-2 gradient-neon text-primary-foreground px-5 py-2.5 text-sm font-semibold uppercase tracking-wide rounded-full"
+            >
+              <QrCode className="w-4 h-4" /> Open UPI app
+            </a>
           </div>
 
           <div className="rounded-xl border border-border p-4 space-y-3">
@@ -207,6 +216,11 @@ const OrderDetail = ({ id, token }) => {
   } = useQuery({
     queryKey: ["order", id, token],
     queryFn: () => orderService.get(id, token),
+  });
+  const { data: paymentConfig } = useQuery({
+    queryKey: ["payment", "config"],
+    queryFn: paymentService.config,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -378,7 +392,12 @@ const OrderDetail = ({ id, token }) => {
                 <p>{address.email}</p>
               </address>
             </Card>
-            <PaymentSection order={order} onUpdated={refreshOrder} token={token} />
+            <PaymentSection
+              order={order}
+              onUpdated={refreshOrder}
+              token={token}
+              upiId={paymentConfig?.upiId}
+            />
           </div>
         </div>
 

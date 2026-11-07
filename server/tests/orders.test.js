@@ -188,6 +188,36 @@ describe("orders", () => {
     ).toBe(400);
   });
 
+  it("exposes the scanner UPI config and builds a QR payment link", async () => {
+    const config = (await request(app).get("/api/payment/config")).body.data;
+    expect(config.upiEnabled).toBe(true);
+    expect(config.upiId).toBeTruthy();
+
+    const before = (await prod("dual-jigger-30-60ml")).stock;
+    await customer
+      .post("/api/cart")
+      .send({ productId: String((await prod("dual-jigger-30-60ml"))._id), quantity: 1 });
+    const res = await customer
+      .post("/api/orders")
+      .send({ shippingAddress, paymentMethod: "UPI" });
+    expect(res.status).toBe(201);
+    const order = res.body.data;
+    expect(order.paymentStatus).toBe("pending");
+    expect(order.upiUri).toContain(`pa=${encodeURIComponent(config.upiId)}`);
+    expect(order.upiUri).toContain("cu=INR");
+    expect(order.upiUri).toContain(`am=${order.summary.total.toFixed(2)}`);
+    expect((await prod("dual-jigger-30-60ml")).stock).toBe(before - 1);
+
+    const submitted = await customer
+      .post(`/api/orders/${order._id}/payment`)
+      .send({ reference: "123456789012" });
+    expect(submitted.status).toBe(200);
+    expect(submitted.body.data).toMatchObject({
+      paymentReference: "123456789012",
+      paymentStatus: "pending",
+    });
+  });
+
   it("applies the kit discount to kit orders", async () => {
     const slots = {
       "cocktail-shaker": "boston-shaker-750ml",

@@ -74,7 +74,7 @@ const CheckoutForm = () => {
   const [errors, setErrors] = useState({});
   const [isCartReady, setIsCartReady] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [paymentMethod, setPaymentMethod] = useState("UPI");
   const [couponInput, setCouponInput] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [saveAddress, setSaveAddress] = useState(true);
@@ -91,6 +91,10 @@ const CheckoutForm = () => {
     staleTime: 5 * 60 * 1000,
   });
   const upiEnabled = Boolean(paymentConfig?.upiEnabled);
+
+  useEffect(() => {
+    if (paymentConfig && !upiEnabled) setPaymentMethod("COD");
+  }, [paymentConfig, upiEnabled]);
 
   useEffect(() => {
     refreshCart()
@@ -331,10 +335,15 @@ const CheckoutForm = () => {
                 />
                 <QrCode className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <span>
-                  <span className="block font-medium">UPI / QR</span>
+                  <span className="block font-medium">Scan &amp; Pay (UPI QR)</span>
                   <span className="block text-sm text-muted-foreground">
-                    Pay with PhonePe, Google Pay, Paytm or any UPI app. You will see a QR code
-                    after placing the order.
+                    Scan the QR with PhonePe, Google Pay, Paytm or any UPI app after placing the
+                    order.
+                    {paymentConfig?.upiId && (
+                      <span className="block mt-1 font-mono text-xs text-primary">
+                        {paymentConfig.upiId}
+                      </span>
+                    )}
                   </span>
                 </span>
               </label>
@@ -342,7 +351,7 @@ const CheckoutForm = () => {
           </div>
           {paymentConfig && !upiEnabled && (
             <p className="mt-4 text-xs text-muted-foreground">
-              UPI is temporarily unavailable. Please choose Cash on Delivery.
+              Scan &amp; Pay is temporarily unavailable. Please choose Cash on Delivery.
             </p>
           )}
         </section>

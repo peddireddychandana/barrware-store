@@ -53,7 +53,8 @@ module.exports = {
   },
   payment: {
     // Direct UPI payments: customers scan a QR and pay the owner; an admin verifies the reference.
-    upiId: process.env.UPI_ID || "",
+    // The default scanner UPI ID is used when UPI_ID is not set.
+    upiId: (process.env.UPI_ID || "9398278894@ibl").trim(),
     upiPayeeName: process.env.UPI_PAYEE_NAME || "VYRNT",
   },
 };
