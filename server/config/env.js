@@ -9,11 +9,25 @@ if (
   throw new Error("JWT_SECRET must be set (32+ chars) in production");
 }
 
+const mongoUri = (process.env.MONGO_URI || "").trim();
+
+if (isProduction && !mongoUri) {
+  throw new Error(
+    "MONGO_URI must be set in production (MongoDB Atlas connection string)",
+  );
+}
+
+if (mongoUri && !/^mongodb(\+srv)?:\/\//.test(mongoUri)) {
+  throw new Error(
+    'MONGO_URI must start with "mongodb://" or "mongodb+srv://"; check for stray spaces, quotes, or line breaks',
+  );
+}
+
 module.exports = {
   isProduction,
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT) || 5000,
-  mongoUri: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/barware-store",
+  mongoUri: mongoUri || "mongodb://127.0.0.1:27017/barware-store",
   jwtSecret: process.env.JWT_SECRET || "insecure-dev-secret",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   // Cross-site (client and API on different domains) needs "none"; same-site deployments can use "lax".
