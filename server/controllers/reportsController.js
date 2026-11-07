@@ -227,6 +227,13 @@ exports.moderateReview = async (req, res) => {
   sendSuccess(res, review, { message: "Review updated" });
 };
 
+exports.removeReview = async (req, res) => {
+  const review = await Review.findByIdAndDelete(req.params.id);
+  if (!review) throw new AppError("Review not found", 404);
+  await recalculateProductRating(review.product);
+  sendSuccess(res, null, { message: "Review deleted" });
+};
+
 exports.productCatalogue = async (_req, res) => {
   const products = await Product.find()
     .sort({ createdAt: -1 })

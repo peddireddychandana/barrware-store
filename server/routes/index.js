@@ -121,6 +121,7 @@ router.post(
 router.post("/orders/track", validate(schemas.trackOrder), orders.track);
 router.get("/orders/my-orders", protect, orders.myOrders);
 router.get("/orders/:id", optionalAuth, orders.getOne);
+router.delete("/orders/:id", optionalAuth, orders.remove);
 router.put("/orders/:id/cancel", optionalAuth, orders.cancel);
 router.post(
   "/orders/:id/payment",
@@ -160,6 +161,7 @@ router.put(
 
 router.get("/admin/dashboard", ...adminOnly, admin.dashboard);
 router.get("/admin/orders", ...adminOnly, admin.orders);
+router.delete("/admin/orders/:id", ...adminOnly, admin.removeOrder);
 router.put(
   "/admin/orders/:id/status",
   ...adminOnly,
@@ -180,6 +182,7 @@ router.put(
 );
 router.get("/admin/customers", ...adminOnly, admin.customers);
 router.get("/admin/customers/:id", ...adminOnly, reports.customerDetail);
+router.delete("/admin/customers/:id", ...adminOnly, admin.removeCustomer);
 router.get("/admin/products", ...adminOnly, products.adminList);
 
 router.get("/admin/reports/sales", ...adminOnly, reports.sales);
@@ -217,6 +220,7 @@ router.put(
 router.delete("/admin/coupons/:id", ...adminOnly, coupons.remove);
 
 router.get("/admin/inquiries", ...adminOnly, inquiries.adminList);
+router.delete("/admin/inquiries/:id", ...adminOnly, inquiries.remove);
 router.put(
   "/admin/inquiries/:id",
   ...adminOnly,
@@ -225,6 +229,7 @@ router.put(
 );
 
 router.get("/admin/reviews", ...adminOnly, reports.reviews);
+router.delete("/admin/reviews/:id", ...adminOnly, reports.removeReview);
 router.put(
   "/admin/reviews/:id",
   ...adminOnly,

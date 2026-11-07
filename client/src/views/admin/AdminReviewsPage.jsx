@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, EyeOff, Loader2, Star } from "lucide-react";
+import { CheckCircle2, EyeOff, Loader2, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { adminService } from "@/services";
 import { getErrorMessage } from "@/services/api";
@@ -21,6 +21,15 @@ const ReviewRow = ({ review, onUpdated }) => {
     mutationFn: (body) => adminService.moderateReview(review._id, body),
     onSuccess: () => {
       toast.success("Review updated");
+      onUpdated();
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
+  const remove = useMutation({
+    mutationFn: () => adminService.deleteReview(review._id),
+    onSuccess: () => {
+      toast.success("Review deleted");
       onUpdated();
     },
     onError: (error) => toast.error(getErrorMessage(error)),
@@ -87,6 +96,20 @@ const ReviewRow = ({ review, onUpdated }) => {
               Approve
             </button>
           )}
+          <button
+            onClick={() => {
+              if (window.confirm("Delete this review permanently?")) remove.mutate();
+            }}
+            disabled={remove.isPending}
+            className="inline-flex items-center gap-1.5 text-xs text-destructive hover:underline disabled:opacity-50"
+          >
+            {remove.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="w-3.5 h-3.5" />
+            )}
+            Delete
+          </button>
         </div>
       </Td>
     </tr>

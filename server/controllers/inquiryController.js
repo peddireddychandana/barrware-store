@@ -32,6 +32,12 @@ exports.adminList = async (req, res) => {
   sendList(res, data, { page, limit, total });
 };
 
+exports.remove = async (req, res) => {
+  const inquiry = await Inquiry.findByIdAndDelete(req.params.id);
+  if (!inquiry) throw new AppError("Inquiry not found", 404);
+  sendSuccess(res, null, { message: "Inquiry deleted" });
+};
+
 exports.adminUpdate = async (req, res) => {
   const inquiry = await Inquiry.findByIdAndUpdate(
     req.params.id,

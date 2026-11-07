@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { adminService } from "@/services";
 import { getErrorMessage } from "@/services/api";
 import {
+  ConfirmDialog,
+  DeleteIconButton,
   PageHeader,
   Pagination,
   Panel,
@@ -49,6 +51,7 @@ const AdminInquiriesPage = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const query = useQuery({
     queryKey: ["admin", "inquiries", page, status],
@@ -56,6 +59,16 @@ const AdminInquiriesPage = () => {
     placeholderData: (previous) => previous,
   });
   const inquiries = query.data?.items ?? [];
+
+  const remove = useMutation({
+    mutationFn: (inquiry) => adminService.deleteInquiry(inquiry._id),
+    onSuccess: () => {
+      toast.success("Inquiry deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin", "inquiries"] });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+    onSettled: () => setPendingDelete(null),
+  });
 
   return (
     <>
@@ -96,6 +109,7 @@ const AdminInquiriesPage = () => {
                 <Th>From</Th>
                 <Th>Message</Th>
                 <Th>Status</Th>
+                <Th className="text-right">Actions</Th>
               </tr>
             </thead>
             <tbody>
@@ -123,6 +137,12 @@ const AdminInquiriesPage = () => {
                       }
                     />
                   </Td>
+                  <Td className="text-right">
+                    <DeleteIconButton
+                      label={`Delete inquiry from ${inquiry.name}`}
+                      onClick={() => setPendingDelete(inquiry)}
+                    />
+                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -130,6 +150,15 @@ const AdminInquiriesPage = () => {
           <Pagination pagination={query.data?.pagination} onPage={setPage} />
         </QueryState>
       </Panel>
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="DELETE INQUIRY?"
+        message={`The inquiry from ${pendingDelete?.name ?? "this customer"} will be permanently deleted.`}
+        confirmLabel="Delete inquiry"
+        isBusy={remove.isPending}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => remove.mutate(pendingDelete)}
+      />
     </>
   );
 };

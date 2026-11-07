@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Cart = require("../models/Cart");
+const Wishlist = require("../models/Wishlist");
 const AppError = require("../utils/AppError");
 const orderService = require("../services/orderService");
 const { LOW_STOCK_THRESHOLD, ORDER_FLOW } = require("../config/store");
@@ -70,6 +72,15 @@ exports.orders = async (req, res) => {
     Order.countDocuments(filter),
   ]);
   sendList(res, data, { page, limit, total });
+};
+
+exports.removeOrder = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id))
+    throw new AppError("Order not found", 404);
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new AppError("Order not found", 404);
+  await orderService.deleteOrder(order);
+  sendSuccess(res, null, { message: "Order deleted" });
 };
 
 exports.updateOrderStatus = async (req, res) => {
@@ -157,4 +168,18 @@ exports.customers = async (req, res) => {
     User.countDocuments({ role: "customer" }),
   ]);
   sendList(res, rows, { page, limit, total });
+};
+
+exports.removeCustomer = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id))
+    throw new AppError("Customer not found", 404);
+  const user = await User.findById(req.params.id);
+  if (!user || user.role !== "customer")
+    throw new AppError("Customer not found", 404);
+  await Promise.all([
+    User.deleteOne({ _id: user._id }),
+    Cart.deleteOne({ user: user._id }),
+    Wishlist.deleteOne({ user: user._id }),
+  ]);
+  sendSuccess(res, null, { message: "Customer deleted" });
 };

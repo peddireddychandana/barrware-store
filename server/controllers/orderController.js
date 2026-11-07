@@ -76,6 +76,12 @@ exports.track = async (req, res) => {
   sendSuccess(res, order);
 };
 
+exports.remove = async (req, res) => {
+  const order = await loadAccessibleOrder(req);
+  await orderService.deleteOrder(order);
+  sendSuccess(res, null, { message: "Order deleted" });
+};
+
 exports.cancel = async (req, res) => {
   const order = await loadAccessibleOrder(req);
   sendSuccess(res, await orderService.cancelByCustomer(order), {

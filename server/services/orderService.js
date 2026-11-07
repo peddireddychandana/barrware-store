@@ -273,6 +273,20 @@ async function cancelByCustomer(order) {
   return cancelled;
 }
 
+/** Deletes an order, restoring stock when it was still in progress. */
+async function deleteOrder(order) {
+  if (order.status !== "cancelled" && order.status !== "delivered") {
+    const quantities = new Map();
+    for (const item of order.items)
+      quantities.set(
+        String(item.product),
+        (quantities.get(String(item.product)) || 0) + item.quantity,
+      );
+    await releaseStock(quantities);
+  }
+  await Order.deleteOne({ _id: order._id });
+}
+
 /** Admin transition: forward-only along the flow, or cancel before delivery. */
 async function adminSetStatus(order, status, note = "", tracking = null) {
   if (order.status === "cancelled" || order.status === "delivered")
@@ -395,6 +409,7 @@ async function expirePendingOrders() {
 module.exports = {
   placeOrder,
   cancelByCustomer,
+  deleteOrder,
   adminSetStatus,
   setTracking,
   submitUpiReference,

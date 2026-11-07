@@ -1,10 +1,14 @@
 import { useState } from "react";
 import Link from "@/components/AppLink";
 import { useRouter } from "@/lib/router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { adminService } from "@/services";
+import { getErrorMessage } from "@/services/api";
 import { formatPrice } from "@/utils/format";
 import {
+  ConfirmDialog,
+  DeleteIconButton,
   PageHeader,
   Pagination,
   Panel,
@@ -38,8 +42,10 @@ const FilterPill = ({ active, onClick, children }) => (
 
 const AdminOrdersPage = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const query = useQuery({
     queryKey: ["admin", "orders", status, page],
@@ -47,6 +53,17 @@ const AdminOrdersPage = () => {
     placeholderData: (previous) => previous,
   });
   const orders = query.data?.items ?? [];
+
+  const remove = useMutation({
+    mutationFn: (order) => adminService.deleteOrder(order._id),
+    onSuccess: () => {
+      toast.success("Order deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+    onSettled: () => setPendingDelete(null),
+  });
 
   const selectStatus = (next) => {
     setStatus(next);
@@ -84,6 +101,7 @@ const AdminOrdersPage = () => {
                 <Th>Date</Th>
                 <Th className="text-right">Total</Th>
                 <Th>Status</Th>
+                <Th className="text-right">Actions</Th>
               </tr>
             </thead>
             <tbody>
@@ -113,6 +131,14 @@ const AdminOrdersPage = () => {
                   <Td>
                     <StatusBadge status={order.status} />
                   </Td>
+                  <Td className="text-right">
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <DeleteIconButton
+                        label={`Delete order ${order.orderNumber}`}
+                        onClick={() => setPendingDelete(order)}
+                      />
+                    </div>
+                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -120,6 +146,15 @@ const AdminOrdersPage = () => {
           <Pagination pagination={query.data?.pagination} onPage={setPage} />
         </QueryState>
       </Panel>
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="DELETE ORDER?"
+        message={`Order ${pendingDelete?.orderNumber ?? ""} will be permanently deleted. Stock for in-progress orders is restored.`}
+        confirmLabel="Delete order"
+        isBusy={remove.isPending}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => remove.mutate(pendingDelete)}
+      />
     </>
   );
 };

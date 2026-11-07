@@ -79,6 +79,8 @@ export const orderService = {
   get: (id, token) =>
     data(api.get(`/orders/${id}`, { params: token ? { token } : {} })),
   track: (body) => data(api.post("/orders/track", body)),
+  remove: (id, token) =>
+    data(api.delete(`/orders/${id}`, { params: token ? { token } : {} })),
   cancel: (id, token) =>
     data(api.put(`/orders/${id}/cancel`, {}, { params: token ? { token } : {} })),
   submitPayment: (id, reference, token) =>
@@ -98,11 +100,13 @@ export const paymentService = {
 export const adminService = {
   dashboard: () => data(api.get("/admin/dashboard")),
   orders: (params) => page(api.get("/admin/orders", { params })),
+  deleteOrder: (id) => data(api.delete(`/admin/orders/${id}`)),
   updateOrderStatus: (id, body) => data(api.put(`/admin/orders/${id}/status`, body)),
   updatePaymentStatus: (id, body) => data(api.put(`/admin/orders/${id}/payment`, body)),
   customers: () => data(api.get("/admin/customers")),
   customerPage: (params) => page(api.get("/admin/customers", { params })),
   customer: (id) => data(api.get(`/admin/customers/${id}`)),
+  deleteCustomer: (id) => data(api.delete(`/admin/customers/${id}`)),
   products: (params) => page(api.get("/admin/products", { params })),
   updateTracking: (id, body) => data(api.put(`/admin/orders/${id}/tracking`, body)),
   uploadImages: (files) => {
@@ -115,10 +119,12 @@ export const adminService = {
   updateCoupon: (id, body) => data(api.put(`/admin/coupons/${id}`, body)),
   deleteCoupon: (id) => data(api.delete(`/admin/coupons/${id}`)),
   inquiries: (params) => page(api.get("/admin/inquiries", { params })),
+  deleteInquiry: (id) => data(api.delete(`/admin/inquiries/${id}`)),
   updateInquiry: (id, body) => data(api.put(`/admin/inquiries/${id}`, body)),
   subscribers: (params) => page(api.get("/admin/subscribers", { params })),
   reports: (params) => data(api.get("/admin/reports/sales", { params })),
   reviews: (params) => page(api.get("/admin/reviews", { params })),
+  deleteReview: (id) => data(api.delete(`/admin/reviews/${id}`)),
   moderateReview: (id, body) => data(api.put(`/admin/reviews/${id}`, body)),
   exportUrl: (kind, params = {}) => {
     const query = new URLSearchParams(params).toString();

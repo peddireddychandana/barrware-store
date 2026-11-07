@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "@/components/AppLink";
-import { useParams } from "@/lib/router";
+import { useParams, useRouter } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   FileText,
   Loader2,
   QrCode,
+  Trash2,
   Truck,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -194,9 +195,11 @@ const TrackingCard = ({ order }) => {
 
 const OrderDetail = ({ id, token }) => {
   const { isLoggedIn } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [isJustPlaced, setIsJustPlaced] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const {
     data: order,
     isLoading,
@@ -244,6 +247,22 @@ const OrderDetail = ({ id, token }) => {
       toast.error(getErrorMessage(cancelError));
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this order? This can't be undone.")) return;
+    setIsDeleting(true);
+    try {
+      await orderService.remove(order._id, token);
+      queryClient.removeQueries({ queryKey: ["order", id, token] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Order deleted");
+      router.push(isLoggedIn ? "/orders" : "/track-order");
+    } catch (deleteError) {
+      toast.error(getErrorMessage(deleteError));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -308,6 +327,14 @@ const OrderDetail = ({ id, token }) => {
               {isCancelling ? "Cancelling..." : "Cancel Order"}
             </button>
           )}
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="inline-flex items-center gap-2 px-6 py-2.5 border border-destructive text-destructive rounded-full text-sm font-semibold uppercase tracking-widest hover:bg-destructive/10 transition-colors disabled:opacity-60"
+          >
+            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            {isDeleting ? "Deleting..." : "Delete Order"}
+          </button>
         </div>
       </div>
 

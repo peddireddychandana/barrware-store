@@ -1,7 +1,8 @@
 import { useState } from "react";
 import Link from "@/components/AppLink";
+import { useRouter } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Ban, Loader2, Truck } from "lucide-react";
+import { ArrowLeft, Ban, Loader2, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { adminService, orderService } from "@/services";
 import { getErrorMessage } from "@/services/api";
@@ -338,12 +339,25 @@ const OrderDetail = ({ order, onUpdated }) => {
 };
 
 const AdminOrderDetailPage = ({ orderId }) => {
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const query = useQuery({
     queryKey: ["admin", "order", orderId],
     queryFn: () => orderService.get(orderId),
   });
   const order = query.data;
+
+  const remove = useMutation({
+    mutationFn: () => adminService.deleteOrder(orderId),
+    onSuccess: () => {
+      toast.success("Order deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      router.push("/admin/orders");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+    onSettled: () => setIsConfirmingDelete(false),
+  });
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["admin"] });
@@ -362,11 +376,33 @@ const AdminOrderDetailPage = ({ orderId }) => {
         title="ORDER"
         accent={order?.orderNumber ?? ""}
         subtitle={order ? `Placed ${formatDateTime(order.createdAt)}` : undefined}
-        action={order && <StatusBadge status={order.status} />}
+        action={
+          order && (
+            <div className="flex items-center gap-3">
+              <StatusBadge status={order.status} />
+              <button
+                type="button"
+                onClick={() => setIsConfirmingDelete(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-destructive text-destructive text-xs font-semibold uppercase tracking-widest hover:bg-destructive/10 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            </div>
+          )
+        }
       />
       <QueryState query={query}>
         {order && <OrderDetail order={order} onUpdated={refresh} />}
       </QueryState>
+      <ConfirmDialog
+        open={isConfirmingDelete}
+        title="DELETE ORDER?"
+        message={`Order ${order?.orderNumber ?? ""} will be permanently deleted. Stock for in-progress orders is restored.`}
+        confirmLabel="Delete order"
+        isBusy={remove.isPending}
+        onCancel={() => setIsConfirmingDelete(false)}
+        onConfirm={() => remove.mutate()}
+      />
     </>
   );
 };

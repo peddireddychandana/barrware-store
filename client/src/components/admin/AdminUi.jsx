@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ChevronLeft, ChevronRight, Inbox, Loader2 } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Inbox, Loader2, Trash2 } from "lucide-react";
 import { getErrorMessage } from "@/services/api";
 
 export const inputClass =
@@ -123,6 +123,17 @@ export const Td = ({ children, className = "" }) => (
 );
 
 export const rowClass = "border-t border-border hover:bg-secondary/30 transition-colors";
+
+export const DeleteIconButton = ({ onClick, label = "Delete" }) => (
+  <button
+    type="button"
+    aria-label={label}
+    onClick={onClick}
+    className="p-2 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+  >
+    <Trash2 className="w-4 h-4" />
+  </button>
+);
 
 export const Pagination = ({ pagination, onPage }) => {
   if (!pagination || pagination.pages <= 1) return null;

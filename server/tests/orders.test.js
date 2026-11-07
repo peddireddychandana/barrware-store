@@ -126,7 +126,28 @@ describe("orders", () => {
     });
     expect((await other.get(`/api/orders/${id}`)).status).toBe(404);
     expect((await other.put(`/api/orders/${id}/cancel`)).status).toBe(404);
+    expect((await other.delete(`/api/orders/${id}`)).status).toBe(404);
     expect((await request(app).get("/api/orders/my-orders")).status).toBe(401);
+  });
+
+  it("deletes an in-progress order and restores stock", async () => {
+    const before = (await prod("bar-spoon-gold")).stock;
+    const res = await placeOrder("bar-spoon-gold", 2);
+    const id = res.body.data._id;
+    expect((await prod("bar-spoon-gold")).stock).toBe(before - 2);
+    expect((await customer.delete(`/api/orders/${id}`)).status).toBe(200);
+    expect(await Order.findById(id)).toBeNull();
+    expect((await prod("bar-spoon-gold")).stock).toBe(before);
+  });
+
+  it("does not restock again when deleting a cancelled order", async () => {
+    const before = (await prod("bar-spoon-gold")).stock;
+    const res = await placeOrder("bar-spoon-gold", 1);
+    const id = res.body.data._id;
+    expect((await customer.put(`/api/orders/${id}/cancel`)).status).toBe(200);
+    expect((await prod("bar-spoon-gold")).stock).toBe(before);
+    expect((await customer.delete(`/api/orders/${id}`)).status).toBe(200);
+    expect((await prod("bar-spoon-gold")).stock).toBe(before);
   });
 
   it("cancel restores stock; cancel rejected after shipped", async () => {

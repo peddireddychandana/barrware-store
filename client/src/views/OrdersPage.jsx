@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import Link from "@/components/AppLink";
-import { useQuery } from "@tanstack/react-query";
-import { PackageOpen } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PackageOpen, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { orderService } from "@/services";
 import { getErrorMessage } from "@/services/api";
@@ -14,7 +15,7 @@ import OrderStatusBadge from "@/components/OrderStatusBadge";
 
 const MAX_THUMBNAILS = 4;
 
-const OrderRow = ({ order, index }) => {
+const OrderRow = ({ order, index, onDelete, isDeleting }) => {
   const extraItems = order.items.length - MAX_THUMBNAILS;
   return (
     <motion.div
@@ -22,49 +23,74 @@ const OrderRow = ({ order, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
     >
-      <Link
-        href={`/orders/${order._id}`}
-        className="block bg-card border border-border rounded-2xl p-5 transition-all hover:border-primary/40 hover:shadow-[0_20px_60px_-15px_rgba(217,165,46,0.25)]"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <p className="font-display text-2xl">{order.orderNumber}</p>
-            <p className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</p>
+      <div className="bg-card border border-border rounded-2xl overflow-hidden transition-all hover:border-primary/40 hover:shadow-[0_20px_60px_-15px_rgba(217,165,46,0.25)]">
+        <Link href={`/orders/${order._id}`} className="block p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="font-display text-2xl">{order.orderNumber}</p>
+              <p className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</p>
+            </div>
+            <OrderStatusBadge status={order.status} />
           </div>
-          <OrderStatusBadge status={order.status} />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              {order.items.slice(0, MAX_THUMBNAILS).map((item) => (
+                <img
+                  key={`${item.product}-${item.kitId ?? ""}`}
+                  src={item.image}
+                  alt={item.name}
+                  title={item.name}
+                  className="w-14 h-14 rounded-lg object-cover bg-secondary border border-border"
+                />
+              ))}
+              {extraItems > 0 && (
+                <span className="text-sm text-muted-foreground">+{extraItems} more</span>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest">Total</p>
+              <p className="text-lg font-semibold">{formatPrice(order.summary.total)}</p>
+            </div>
+          </div>
+        </Link>
+        <div className="flex justify-end px-5 py-3 border-t border-border">
+          <button
+            type="button"
+            onClick={() => onDelete(order)}
+            disabled={isDeleting}
+            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-destructive hover:underline disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" /> Delete order
+          </button>
         </div>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            {order.items.slice(0, MAX_THUMBNAILS).map((item) => (
-              <img
-                key={`${item.product}-${item.kitId ?? ""}`}
-                src={item.image}
-                alt={item.name}
-                title={item.name}
-                className="w-14 h-14 rounded-lg object-cover bg-secondary border border-border"
-              />
-            ))}
-            {extraItems > 0 && (
-              <span className="text-sm text-muted-foreground">+{extraItems} more</span>
-            )}
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest">Total</p>
-            <p className="text-lg font-semibold">{formatPrice(order.summary.total)}</p>
-          </div>
-        </div>
-      </Link>
+      </div>
     </motion.div>
   );
 };
 
 const OrdersList = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["orders", user?._id],
     queryFn: orderService.mine,
   });
   const orders = data?.items ?? [];
+
+  const remove = useMutation({
+    mutationFn: (id) => orderService.remove(id),
+    onSuccess: () => {
+      toast.success("Order deleted");
+      queryClient.invalidateQueries({ queryKey: ["orders", user?._id] });
+    },
+    onError: (deleteError) => toast.error(getErrorMessage(deleteError)),
+  });
+
+  const handleDelete = (order) => {
+    if (window.confirm(`Delete order ${order.orderNumber}? This cannot be undone.`)) {
+      remove.mutate(order._id);
+    }
+  };
 
   if (isLoading)
     return <p className="py-24 text-center text-muted-foreground">Loading your orders...</p>;
@@ -89,7 +115,13 @@ const OrdersList = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       {orders.map((order, index) => (
-        <OrderRow key={order._id} order={order} index={index} />
+        <OrderRow
+          key={order._id}
+          order={order}
+          index={index}
+          onDelete={handleDelete}
+          isDeleting={remove.isPending}
+        />
       ))}
     </div>
   );

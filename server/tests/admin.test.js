@@ -10,7 +10,16 @@ const {
   CUSTOMER,
   shippingAddress,
 } = require("./helpers");
-const { Product, Category } = require("../models");
+const {
+  Product,
+  Category,
+  Order,
+  User,
+  Cart,
+  Wishlist,
+  Inquiry,
+  Review,
+} = require("../models");
 
 let admin;
 let customer;
@@ -230,6 +239,84 @@ describe("admin category CRUD", () => {
     expect(
       (await customer.post("/api/categories").send({ name: "Nope" })).status,
     ).toBe(403);
+  });
+});
+
+describe("admin deletes", () => {
+  it("deletes any order and restores stock for in-progress orders", async () => {
+    const p = await Product.findOne({ slug: "bar-spoon-twisted-silver" });
+    const before = p.stock;
+    await customer
+      .post("/api/cart")
+      .send({ productId: String(p._id), quantity: 3 });
+    const order = (
+      await customer
+        .post("/api/orders")
+        .send({ shippingAddress, paymentMethod: "COD" })
+    ).body.data;
+    expect((await Product.findById(p._id)).stock).toBe(before - 3);
+    expect((await admin.delete(`/api/admin/orders/${order._id}`)).status).toBe(
+      200,
+    );
+    expect(await Order.findById(order._id)).toBeNull();
+    expect((await Product.findById(p._id)).stock).toBe(before);
+    expect((await customer.delete(`/api/admin/orders/${order._id}`)).status).toBe(
+      403,
+    );
+  });
+
+  it("deletes a customer along with their cart and wishlist", async () => {
+    const created = await request(app).post("/api/auth/register").send({
+      name: "Delete Me",
+      email: "delete-me@example.com",
+      password: "Customer@123",
+      confirmPassword: "Customer@123",
+    });
+    expect(created.status).toBe(201);
+    const agent = await loginAs({
+      email: "delete-me@example.com",
+      password: "Customer@123",
+    });
+    const p = await Product.findOne({ slug: "boston-shaker-750ml" });
+    await agent.post("/api/cart").send({ productId: String(p._id) });
+    await agent.post("/api/wishlist/toggle").send({ productId: String(p._id) });
+    const userId = created.body.data._id;
+    expect((await admin.delete(`/api/admin/customers/${userId}`)).status).toBe(
+      200,
+    );
+    expect(await User.findById(userId)).toBeNull();
+    expect(await Cart.countDocuments({ user: userId })).toBe(0);
+    expect(await Wishlist.countDocuments({ user: userId })).toBe(0);
+  });
+
+  it("deletes inquiries and reviews, recalculating the product rating", async () => {
+    await request(app).post("/api/contact").send({
+      name: "Inquiry Person",
+      email: "inquiry@example.com",
+      message: "Do you ship internationally?",
+    });
+    const inquiry = await Inquiry.findOne({ email: "inquiry@example.com" });
+    expect(inquiry).toBeTruthy();
+    expect((await admin.delete(`/api/admin/inquiries/${inquiry._id}`)).status).toBe(
+      200,
+    );
+    expect(await Inquiry.findById(inquiry._id)).toBeNull();
+
+    const p = await Product.findOne({ slug: "french-shaker-800ml" });
+    const review = await customer
+      .post("/api/reviews")
+      .send({ productId: String(p._id), rating: 5, title: "Great", comment: "Nice" });
+    expect(review.status).toBe(201);
+    expect((await Product.findById(p._id)).numReviews).toBe(p.numReviews + 1);
+    expect(
+      (await admin.delete(`/api/admin/reviews/${review.body.data._id}`)).status,
+    ).toBe(200);
+    expect(await Review.findById(review.body.data._id)).toBeNull();
+    const updated = await Product.findById(p._id);
+    expect(updated).toMatchObject({
+      rating: p.rating,
+      numReviews: p.numReviews,
+    });
   });
 });
 
