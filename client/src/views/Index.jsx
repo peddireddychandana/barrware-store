@@ -6,6 +6,7 @@ import WhyChooseUs from "@/components/WhyChooseUs";
 import CategoriesShowcase from "@/components/CategoriesShowcase";
 import Footer from "@/components/Footer";
 import LoginModal from "@/components/LoginModal";
+import SEOHead from "@/components/SEOHead";
 import { useProduct } from "@/hooks/useCatalog";
 
 // Heavy / below-the-fold — load on demand to keep initial paint snappy
@@ -26,6 +27,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="VYRNT | Online Barware Store — Elevate Every Pour"
+        description="Shop precision-engineered barware at VYRNT. Shakers, jiggers, strainers, muddlers & custom bar kits. Free shipping above ₹999 & COD available."
+        path="/"
+        image="/images/hero/hero-1.jpg"
+      />
       <Navbar />
       <LoginModal />
       <main>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "@/components/AppLink";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { optimizedImage } from "@/lib/seo";
 const hero1 = "/images/hero/hero-1.jpg";
 const hero2 = "/images/hero/hero-2.jpg";
 const hero3 = "/images/hero/hero-3.jpg";
@@ -9,6 +10,7 @@ const hero3 = "/images/hero/hero-3.jpg";
 const slides = [
   {
     image: hero1,
+    alt: "VYRNT premium barware collection arranged on a dark home bar",
     title: "ELEVATE EVERY",
     highlight: "POUR.",
     subtitle:
@@ -16,12 +18,14 @@ const slides = [
   },
   {
     image: hero2,
+    alt: "Stainless steel cocktail shaker, strainer and jigger by VYRNT",
     title: "SHAKE. STIR.",
     highlight: "SERVE.",
     subtitle: "Stainless steel shakers, strainers and jiggers built for the perfect cocktail.",
   },
   {
     image: hero3,
+    alt: "VYRNT custom bar kit with essential bartending tools",
     title: "BUILD YOUR",
     highlight: "BAR KIT",
     subtitle: "Pick your tools, save up to 15% and craft a set that is truly yours.",
@@ -81,9 +85,14 @@ const HeroCarousel = () => {
           }}
           className="absolute inset-0"
         >
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${slides[currentSlide].image})` }}
+          <img
+            src={optimizedImage(slides[currentSlide].image, 1920)}
+            alt={slides[currentSlide].alt}
+            width={1920}
+            height={1080}
+            loading="eager"
+            fetchPriority="high"
+            className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/30" />
@@ -112,11 +121,11 @@ const HeroCarousel = () => {
                   Premium Barware Collection
                 </motion.p>
 
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-display leading-none mb-2">
-                  {slides[currentSlide].title}
-                </h1>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-display text-gradient leading-none mb-6">
-                  {slides[currentSlide].highlight}
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-display leading-none mb-6">
+                  <span className="block leading-none mb-2">{slides[currentSlide].title}</span>
+                  <span className="block text-gradient leading-none">
+                    {slides[currentSlide].highlight}
+                  </span>
                 </h1>
 
                 <motion.p
@@ -136,7 +145,7 @@ const HeroCarousel = () => {
                       transition={{ delay: 0.6 }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="inline-block gradient-neon text-primary-foreground px-8 py-4 font-semibold text-lg uppercase tracking-wide rounded-full neon-glow animate-pulse-glow transition-all duration-300 hover:shadow-[0_0_40px_hsl(24_100%_50%/0.6)]"
+                      className="inline-block gradient-neon text-primary-foreground px-8 py-4 font-semibold text-lg uppercase tracking-wide rounded-full neon-glow animate-pulse-glow transition-all duration-300 hover:shadow-[0_0_40px_rgba(217,165,46,0.35)]"
                     >
                       Shop Collection
                     </motion.span>
@@ -148,7 +157,7 @@ const HeroCarousel = () => {
                       transition={{ delay: 0.7 }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="inline-block border border-border bg-secondary/50 backdrop-blur-sm text-foreground px-8 py-4 font-semibold text-lg uppercase tracking-wide rounded-full hover:border-primary hover:text-primary transition-all duration-300"
+                      className="inline-block border border-primary/60 bg-background/60 backdrop-blur-sm text-primary px-8 py-4 font-semibold text-lg uppercase tracking-wide rounded-full hover:bg-primary hover:text-primary-foreground transition-all duration-300"
                     >
                       Explore Barware
                     </motion.span>
@@ -166,7 +175,7 @@ const HeroCarousel = () => {
           whileHover={{ scale: 1.1, x: -5 }}
           whileTap={{ scale: 0.9 }}
           onClick={prevSlide}
-          className="w-12 h-12 bg-secondary/50 backdrop-blur-sm border border-border rounded-full flex items-center justify-center text-foreground hover:bg-primary hover:border-primary transition-all duration-300"
+          className="w-12 h-12 bg-secondary/50 backdrop-blur-sm border border-primary/40 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300"
         >
           <ChevronLeft className="w-6 h-6" />
         </motion.button>
@@ -176,7 +185,7 @@ const HeroCarousel = () => {
           whileHover={{ scale: 1.1, x: 5 }}
           whileTap={{ scale: 0.9 }}
           onClick={nextSlide}
-          className="w-12 h-12 bg-secondary/50 backdrop-blur-sm border border-border rounded-full flex items-center justify-center text-foreground hover:bg-primary hover:border-primary transition-all duration-300"
+          className="w-12 h-12 bg-secondary/50 backdrop-blur-sm border border-primary/40 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300"
         >
           <ChevronRight className="w-6 h-6" />
         </motion.button>

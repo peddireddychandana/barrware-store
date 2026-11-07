@@ -9,6 +9,7 @@ const {
   shippingAddress,
 } = require("./helpers");
 const { Product, Cart, Order } = require("../models");
+const env = require("../config/env");
 
 let customer;
 let admin;
@@ -59,6 +60,9 @@ describe("orders", () => {
       subtotal: 1998,
       discount: 500,
       kitDiscount: 0,
+      couponCode: "",
+      couponDiscount: 0,
+      tax: 228.51,
       shipping: 0,
       total: 1498,
     });

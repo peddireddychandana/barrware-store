@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "@/components/AppLink";
 import { Star, ShoppingBag, Eye, Heart, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "sonner";
 import { formatPrice } from "@/utils/format";
 
@@ -10,9 +11,9 @@ const COLOUR_HEX = {
   silver: "#c9ced4",
   steel: "#c9ced4",
   "stainless steel": "#c9ced4",
-  gold: "#d4af37",
-  copper: "#b87333",
-  black: "#0f0f0f",
+  gold: "#d9a52e",
+  copper: "#b87927",
+  black: "#0b0908",
   "matte black": "#1a1a1a",
   clear: "#e8f1f5",
   transparent: "#e8f1f5",
@@ -25,10 +26,11 @@ const getColourHex = (name = "") => COLOUR_HEX[name.toLowerCase()] ?? "#9ca3af";
 
 const ProductCard = ({ product, onQuickView }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [added, setAdded] = useState(false);
 
   const { addToCart } = useCart();
+  const { isWishlisted, toggle: toggleWishlist } = useWishlist();
+  const wishlisted = isWishlisted(product.id ?? product._id);
 
   const activeImage = product.image;
   const hoverImage = product.images?.[1] ?? activeImage;
@@ -51,7 +53,7 @@ const ProductCard = ({ product, onQuickView }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative overflow-hidden rounded-xl bg-card border border-border transition-all duration-500 group-hover:border-primary/40 group-hover:shadow-[0_20px_60px_-15px_oklch(0.65_0.22_45_/_0.3)]">
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border transition-all duration-500 group-hover:border-primary/40 group-hover:shadow-[0_20px_60px_-15px_rgba(217,165,46,0.25)]">
         {/* Image area */}
         <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
           <Link href={productHref} className="absolute inset-0 z-[1]" aria-label={product.name} />
@@ -103,17 +105,18 @@ const ProductCard = ({ product, onQuickView }) => {
             whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.stopPropagation();
-              setIsWishlisted(!isWishlisted);
+              toggleWishlist(product.id ?? product._id);
             }}
+            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
             className="absolute top-3 right-3 z-10 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-background transition-colors"
           >
             <motion.div
-              animate={isWishlisted ? { scale: [1, 1.4, 1] } : {}}
+              animate={wishlisted ? { scale: [1, 1.4, 1] } : {}}
               transition={{ duration: 0.3 }}
             >
               <Heart
                 className={`w-4 h-4 transition-colors ${
-                  isWishlisted ? "fill-primary text-primary" : "text-muted-foreground"
+                  wishlisted ? "fill-primary text-primary" : "text-muted-foreground"
                 }`}
               />
             </motion.div>
@@ -185,7 +188,7 @@ const ProductCard = ({ product, onQuickView }) => {
             {product.category}
           </p>
           <Link href={productHref}>
-            <h3 className="font-medium text-foreground mb-2 line-clamp-1 hover:text-primary transition-colors">
+            <h3 className="font-medium text-primary mb-2 line-clamp-1 hover:text-foreground transition-colors">
               {product.name}
             </h3>
           </Link>

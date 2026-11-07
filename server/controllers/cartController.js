@@ -36,7 +36,19 @@ exports.remove = async (req, res) =>
 exports.clear = async (req, res) =>
   sendSuccess(res, await cartService.clearCart(req.user._id));
 exports.quote = async (req, res) =>
-  sendSuccess(res, await cartService.quote(req.body.items));
+  sendSuccess(
+    res,
+    await cartService.quote(req.body.items, req.body.couponCode),
+  );
+
+exports.applyCoupon = async (req, res) =>
+  sendSuccess(
+    res,
+    await cartService.applyCoupon(req.user._id, req.body.code),
+    { message: "Coupon applied" },
+  );
+exports.removeCoupon = async (req, res) =>
+  sendSuccess(res, await cartService.removeCoupon(req.user._id));
 
 exports.kitConfig = async (_req, res) =>
   sendSuccess(res, await kitService.getConfig());

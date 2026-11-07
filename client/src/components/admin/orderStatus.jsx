@@ -14,11 +14,11 @@ export const statusLabel = (status) =>
 
 const STATUS_STYLES = {
   placed: "bg-secondary text-foreground border-border",
-  confirmed: "bg-accent/15 text-accent border-accent/40",
-  packed: "bg-accent/15 text-accent border-accent/40",
+  confirmed: "bg-accent/15 text-primary border-accent/40",
+  packed: "bg-accent/15 text-primary border-accent/40",
   shipped: "bg-primary/15 text-primary border-primary/40",
   out_for_delivery: "bg-primary/15 text-primary border-primary/40",
-  delivered: "bg-emerald-500/15 text-emerald-400 border-emerald-500/40",
+  delivered: "bg-primary/15 text-primary border-primary/40",
   cancelled: "bg-destructive/15 text-destructive border-destructive/40",
 };
 
@@ -29,6 +29,30 @@ export const StatusBadge = ({ status }) => (
     }`}
   >
     {statusLabel(status)}
+  </span>
+);
+
+const PAYMENT_STYLES = {
+  pending: "bg-accent/15 text-primary border-accent/40",
+  paid: "bg-primary/15 text-primary border-primary/40",
+  failed: "bg-destructive/15 text-destructive border-destructive/40",
+  not_required: "bg-secondary text-foreground border-border",
+};
+
+const PAYMENT_LABELS = {
+  pending: "Payment pending",
+  paid: "Paid",
+  failed: "Payment failed",
+  not_required: "Pay on delivery",
+};
+
+export const PaymentStatusBadge = ({ status }) => (
+  <span
+    className={`inline-block px-3 py-1 rounded-full border text-xs font-medium uppercase tracking-widest whitespace-nowrap ${
+      PAYMENT_STYLES[status] ?? PAYMENT_STYLES.pending
+    }`}
+  >
+    {PAYMENT_LABELS[status] ?? status}
   </span>
 );
 

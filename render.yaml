@@ -35,6 +35,20 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      # Optional: transactional email. Set BREVO_API_KEY (300/day free) or RESEND_API_KEY (3,000/month free)
+      - key: BREVO_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_FROM_NAME
+        sync: false
+      # UPI QR payments: your UPI ID (e.g. yourname@okhdfcbank). Leave blank to hide UPI at checkout.
+      - key: UPI_ID
+        sync: false
+      - key: UPI_PAYEE_NAME
+        sync: false
 
   - type: web
     name: barware-store-client
@@ -58,4 +72,12 @@ services:
       - key: VITE_STORE_PHONE
         sync: false
       - key: VITE_STORE_EMAIL
+        sync: false
+      - key: VITE_COMPANY_LEGAL_NAME
+        sync: false
+      - key: VITE_COMPANY_GSTIN
+        sync: false
+      - key: VITE_COMPANY_JURISDICTION
+        sync: false
+      - key: VITE_SUPPORT_HOURS
         sync: false

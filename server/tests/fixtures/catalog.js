@@ -1,7 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 
-const CLIENT_IMAGES_DIR = path.resolve(__dirname, "../../client/public");
+const CLIENT_IMAGES_DIR = path.resolve(
+  __dirname,
+  "../../../client/public",
+);
 
 /** Whether a client-served image path (e.g. /images/products/x-1.jpg) exists on disk. */
 const imageExists = (imagePath) =>

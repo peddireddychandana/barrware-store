@@ -2,11 +2,27 @@ const crypto = require("crypto");
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const env = require("../config/env");
 const AppError = require("../utils/AppError");
-const { ORDER_FLOW, CUSTOMER_CANCELLABLE } = require("../config/store");
+const {
+  ORDER_FLOW,
+  CUSTOMER_CANCELLABLE,
+  MAX_ITEM_QUANTITY,
+  UPI_PAYMENT_WINDOW_MINUTES,
+} = require("../config/store");
 const { computeSummary } = require("./pricing");
+const couponService = require("./couponService");
+const {
+  notifyOrderPlaced,
+  notifyOrderStatus,
+  notifyPaymentReceived,
+} = require("./emailService");
 
 const ORDER_NUMBER_ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+
+const round2 = (n) => Math.round(n * 100) / 100;
+const hashToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
 
 /** Generates BW-YYYYMMDD-xxxx; uniqueness is enforced by the DB index and retried by the caller. */
 function generateOrderNumber() {
@@ -51,23 +67,94 @@ const releaseStock = (entries) =>
     ),
   );
 
-/** Creates a COD order from the user's server-side cart. Prices always come from the DB. */
-async function placeOrder(user, shippingAddress) {
-  const cart = await Cart.findOne({ user: user._id });
-  if (!cart || cart.items.length === 0)
-    throw new AppError("Your cart is empty", 400);
+/** Resolves product lines from either the user's cart or a guest item list. */
+async function resolveLines(user, guestItems) {
+  let source;
+  if (user) {
+    const cart = await Cart.findOne({ user: user._id });
+    if (!cart || cart.items.length === 0)
+      throw new AppError("Your cart is empty", 400);
+    source = cart.items.map((i) => ({
+      productId: i.product,
+      quantity: i.quantity,
+      kitId: i.kitId,
+    }));
+  } else {
+    if (!Array.isArray(guestItems) || guestItems.length === 0)
+      throw new AppError("Your cart is empty", 400);
+    const totals = new Map();
+    for (const item of guestItems) {
+      const key = String(item.productId);
+      const current = totals.get(key) || {
+        productId: item.productId,
+        quantity: 0,
+        kitId: item.kitId,
+      };
+      current.quantity += item.quantity;
+      if (item.kitId) current.kitId = item.kitId;
+      totals.set(key, current);
+    }
+    source = [...totals.values()];
+  }
 
   const products = await Product.find({
-    _id: { $in: cart.items.map((i) => i.product) },
+    _id: { $in: source.map((i) => i.productId) },
     isActive: true,
   });
   const byId = new Map(products.map((p) => [String(p._id), p]));
-  const lines = cart.items.map((item) => {
-    const product = byId.get(String(item.product));
+  const lines = source.map((item) => {
+    const product = byId.get(String(item.productId));
     if (!product)
       throw new AppError("A product in your cart is no longer available", 400);
+    if (item.quantity > MAX_ITEM_QUANTITY)
+      throw new AppError(`Maximum ${MAX_ITEM_QUANTITY} units per product`, 400);
     return { product, quantity: item.quantity, kitId: item.kitId };
   });
+  return lines;
+}
+
+/**
+ * Creates an order from the user's server-side cart, or from a guest item list.
+ * Prices always come from the DB. Returns { order, guestToken, existing }.
+ */
+async function placeOrder(
+  user,
+  shippingAddress,
+  paymentMethod = "COD",
+  { items: guestItems, couponCode = "", idempotencyKey } = {},
+) {
+  if (paymentMethod === "UPI" && !env.payment.upiId)
+    throw new AppError("UPI payment is not available right now", 400);
+
+  if (idempotencyKey) {
+    const existing = await Order.findOne({ idempotencyKey });
+    if (existing) return { order: existing, guestToken: null, existing: true };
+  }
+
+  const lines = await resolveLines(user, guestItems);
+
+  // Coupon comes from the cart for members, from the request for guests.
+  let code = couponCode;
+  let cart = null;
+  if (user) {
+    cart = await Cart.findOne({ user: user._id });
+    if (!code && cart.couponCode) code = cart.couponCode;
+  }
+
+  const baseItems = lines.map(({ product, quantity, kitId }) => ({
+    price: product.price,
+    originalPrice: product.originalPrice,
+    quantity,
+    kitId,
+  }));
+  const base = computeSummary(baseItems);
+  const payable = round2(base.total - base.shipping);
+
+  let coupon = null;
+  if (code) {
+    const doc = await couponService.requireValid(code, payable, user?._id);
+    coupon = couponService.toDescriptor(doc);
+  }
 
   const quantities = new Map();
   for (const { product, quantity } of lines)
@@ -76,36 +163,56 @@ async function placeOrder(user, shippingAddress) {
       (quantities.get(String(product._id)) || 0) + quantity,
     );
 
+  const items = lines.map(({ product, quantity, kitId }) => ({
+    product: product._id,
+    name: product.name,
+    image: product.images[0] || "",
+    sku: product.sku,
+    price: product.price,
+    originalPrice: product.originalPrice,
+    quantity,
+    kitId,
+  }));
+  const { itemCount, ...summary } = computeSummary(items, coupon);
+
   await reserveStock(quantities);
 
   let order;
+  const guestToken = user
+    ? null
+    : crypto.randomBytes(24).toString("hex");
   try {
-    const items = lines.map(({ product, quantity, kitId }) => ({
-      product: product._id,
-      name: product.name,
-      image: product.images[0] || "",
-      sku: product.sku,
-      price: product.price,
-      originalPrice: product.originalPrice,
-      quantity,
-      kitId,
-    }));
-    const { itemCount, ...summary } = computeSummary(items);
+    const isUpi = paymentMethod === "UPI";
     for (let attempt = 0; attempt < 5 && !order; attempt += 1) {
       try {
         order = await Order.create({
           orderNumber: generateOrderNumber(),
-          user: user._id,
+          user: user ? user._id : undefined,
+          guestTokenHash: guestToken ? hashToken(guestToken) : undefined,
+          idempotencyKey: idempotencyKey || undefined,
           items,
           shippingAddress,
-          paymentMethod: "COD",
+          paymentMethod,
+          paymentStatus: isUpi ? "pending" : "not_required",
+          paymentExpiresAt: isUpi
+            ? new Date(Date.now() + UPI_PAYMENT_WINDOW_MINUTES * 60 * 1000)
+            : undefined,
           summary,
           status: "placed",
           statusHistory: [
-            { status: "placed", note: "Order placed (Cash on Delivery)" },
+            {
+              status: "placed",
+              note: isUpi
+                ? "Order placed (UPI payment pending)"
+                : "Order placed (Cash on Delivery)",
+            },
           ],
         });
       } catch (err) {
+        if (err.code === 11000 && err.keyPattern?.idempotencyKey) {
+          const existing = await Order.findOne({ idempotencyKey });
+          if (existing) return { order: existing, guestToken: null, existing: true };
+        }
         if (
           !(err.code === 11000 && err.keyPattern && err.keyPattern.orderNumber)
         )
@@ -122,9 +229,14 @@ async function placeOrder(user, shippingAddress) {
     throw err;
   }
 
-  cart.items = [];
-  await cart.save();
-  return order;
+  if (coupon) await couponService.recordUsage(coupon, user?._id).catch(() => {});
+  if (cart) {
+    cart.items = [];
+    cart.couponCode = "";
+    await cart.save();
+  }
+  notifyOrderPlaced(order).catch(() => {});
+  return { order, guestToken, existing: false };
 }
 
 /** Marks an order cancelled and restores stock. Caller checks permissions. */
@@ -154,15 +266,27 @@ async function cancelByCustomer(order) {
       `Order can no longer be cancelled (status: ${order.status})`,
       400,
     );
-  return cancelAndRestock(order, "Cancelled by customer");
+  const cancelled = await cancelAndRestock(order, "Cancelled by customer");
+  notifyOrderStatus(cancelled, "cancelled", "Cancelled by customer").catch(
+    () => {},
+  );
+  return cancelled;
 }
 
 /** Admin transition: forward-only along the flow, or cancel before delivery. */
-async function adminSetStatus(order, status, note = "") {
+async function adminSetStatus(order, status, note = "", tracking = null) {
   if (order.status === "cancelled" || order.status === "delivered")
     throw new AppError(`Order is already ${order.status}`, 400);
-  if (status === "cancelled")
-    return cancelAndRestock(order, note || "Cancelled by admin");
+  if (status === "cancelled") {
+    const cancelled = await cancelAndRestock(
+      order,
+      note || "Cancelled by admin",
+    );
+    notifyOrderStatus(cancelled, "cancelled", note || "Cancelled by admin").catch(
+      () => {},
+    );
+    return cancelled;
+  }
   if (ORDER_FLOW.indexOf(status) <= ORDER_FLOW.indexOf(order.status))
     throw new AppError(
       `Cannot move order from ${order.status} to ${status}`,
@@ -170,8 +294,111 @@ async function adminSetStatus(order, status, note = "") {
     );
   order.status = status;
   order.statusHistory.push({ status, at: new Date(), note });
+  if (tracking) {
+    order.tracking = {
+      carrier: tracking.carrier ?? order.tracking?.carrier ?? "",
+      number: tracking.number ?? order.tracking?.number ?? "",
+      url: tracking.url ?? order.tracking?.url ?? "",
+      updatedAt: new Date(),
+    };
+  }
+  await order.save();
+  notifyOrderStatus(order, status, note).catch(() => {});
+  return order;
+}
+
+/** Stores courier tracking details without changing the order status. */
+async function setTracking(order, tracking) {
+  order.tracking = {
+    carrier: tracking.carrier ?? order.tracking?.carrier ?? "",
+    number: tracking.number ?? order.tracking?.number ?? "",
+    url: tracking.url ?? order.tracking?.url ?? "",
+    updatedAt: new Date(),
+  };
   await order.save();
   return order;
 }
 
-module.exports = { placeOrder, cancelByCustomer, adminSetStatus };
+/** Customer submits the UPI transaction reference after paying the QR. */
+async function submitUpiReference(order, reference) {
+  if (order.paymentMethod !== "UPI")
+    throw new AppError("This order is not a UPI payment order", 400);
+  if (order.paymentStatus === "paid")
+    throw new AppError("Payment is already confirmed", 400);
+  if (order.status === "cancelled")
+    throw new AppError("This order has been cancelled", 400);
+
+  const res = await Order.updateOne(
+    { _id: order._id, paymentStatus: { $in: ["pending", "failed"] } },
+    {
+      $set: {
+        paymentStatus: "pending",
+        paymentReference: reference,
+        paymentSubmittedAt: new Date(),
+      },
+    },
+  );
+  if (res.matchedCount !== 1)
+    throw new AppError("Payment status changed, please retry", 409);
+  return Order.findById(order._id);
+}
+
+/** Admin confirms (or rejects) the UPI payment after checking the bank/UPI app. */
+async function adminSetPaymentStatus(order, status, note = "") {
+  if (order.paymentMethod !== "UPI")
+    throw new AppError("Payment status can only be set for UPI orders", 400);
+  if (order.paymentStatus === status)
+    throw new AppError(`Payment is already marked ${status}`, 400);
+
+  order.paymentStatus = status;
+  order.paidAt = status === "paid" ? new Date() : undefined;
+  if (status === "paid") order.paymentExpiresAt = undefined;
+  await order.save();
+
+  if (status === "paid") {
+    notifyPaymentReceived(order, note).catch(() => {});
+  }
+  return order;
+}
+
+/**
+ * Cancels unpaid UPI orders past their payment window and restores stock.
+ * Safe to call repeatedly (e.g. from a scheduler).
+ */
+async function expirePendingOrders() {
+  const stale = await Order.find({
+    paymentMethod: "UPI",
+    paymentStatus: "pending",
+    status: "placed",
+    paymentExpiresAt: { $lt: new Date() },
+  });
+  let count = 0;
+  for (const order of stale) {
+    try {
+      const cancelled = await cancelAndRestock(
+        order,
+        "Cancelled automatically: UPI payment not received in time",
+      );
+      notifyOrderStatus(
+        cancelled,
+        "cancelled",
+        "Payment window expired",
+      ).catch(() => {});
+      count += 1;
+    } catch {
+      // Order changed concurrently; skip.
+    }
+  }
+  return count;
+}
+
+module.exports = {
+  placeOrder,
+  cancelByCustomer,
+  adminSetStatus,
+  setTracking,
+  submitUpiReference,
+  adminSetPaymentStatus,
+  expirePendingOrders,
+  hashToken,
+};

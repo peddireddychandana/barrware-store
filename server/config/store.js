@@ -6,6 +6,18 @@ module.exports = {
   LOW_STOCK_THRESHOLD: 10,
   MAX_ITEM_QUANTITY: 50,
 
+  /** GST is included in displayed prices (standard Indian retail pricing). */
+  GST_RATE: Number(process.env.GST_RATE) || 0.18,
+  GST_ENABLED: process.env.GST_ENABLED !== "false",
+  GST_NUMBER: process.env.GST_NUMBER || "",
+
+  /** Minutes an unpaid UPI order may hold stock before it is auto-cancelled. */
+  UPI_PAYMENT_WINDOW_MINUTES:
+    Number(process.env.UPI_PAYMENT_WINDOW_MINUTES) || 60,
+
+  /** Days after delivery in which a return can be requested. */
+  RETURN_WINDOW_DAYS: Number(process.env.RETURN_WINDOW_DAYS) || 7,
+
   PRODUCT_TYPES: {
     "cocktail-shaker": "Cocktail Shaker",
     "hawthorne-strainer": "Hawthorne Strainer",

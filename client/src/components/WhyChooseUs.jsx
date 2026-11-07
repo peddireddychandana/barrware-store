@@ -45,8 +45,8 @@ const WhyChooseUs = () => {
             BUILT FOR THE <span className="text-gradient">PERFECT POUR</span>
           </h2>
           <p className="text-muted-foreground text-lg">
-            Every tool is chosen with care and every detail tested. This is what separates Barware
-            Store from the rest.
+            Every tool is chosen with care and every detail tested. This is what separates Vyrnt
+            from the rest.
           </p>
         </motion.div>
 

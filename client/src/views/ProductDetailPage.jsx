@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "@/components/AppLink";
 import { useParams, useRouter } from "@/lib/router";
-import { ArrowLeft, Check, Minus, Plus, ShoppingBag, Zap } from "lucide-react";
+import { ArrowLeft, Check, Heart, Minus, Plus, ShoppingBag, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { useProduct } from "@/hooks/useCatalog";
 import { formatPrice } from "@/utils/format";
 import PageShell from "@/components/PageShell";
@@ -19,7 +19,7 @@ const getStockLabel = (stock) => {
   if (stock <= 0) return { text: "Out of stock", className: "text-destructive" };
   if (stock <= LOW_STOCK_THRESHOLD)
     return { text: `Only ${stock} left`, className: "text-primary" };
-  return { text: "In stock", className: "text-green-600" };
+  return { text: "In stock", className: "text-primary" };
 };
 
 const getSpecRows = (product) => {
@@ -99,8 +99,8 @@ const NotFoundMessage = () => (
 const ProductDetailPage = () => {
   const { slug } = useParams();
   const router = useRouter();
-  const { isLoggedIn, openLoginModal } = useAuth();
   const { addToCart } = useCart();
+  const { isWishlisted, toggle: toggleWishlist } = useWishlist();
   const { data: product, isLoading, isError } = useProduct(slug);
   const [quantity, setQuantity] = useState(1);
   const [isBusy, setIsBusy] = useState(false);
@@ -226,7 +226,7 @@ const ProductDetailPage = () => {
               whileTap={{ scale: 0.97 }}
               onClick={handleBuyNow}
               disabled={isOutOfStock || isBusy}
-              className="flex-1 min-w-[160px] h-11 border border-primary text-primary rounded-full text-sm font-semibold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors disabled:opacity-50"
+              className="flex-1 min-w-[160px] h-11 border border-primary text-primary rounded-full text-sm font-semibold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
             >
               <Zap className="w-4 h-4" /> Buy Now
             </motion.button>

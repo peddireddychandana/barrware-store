@@ -2,16 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "@/components/AppLink";
 import { useRouter } from "@/lib/router";
-import { ArrowLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Banknote, QrCode, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { orderService } from "@/services";
+import { addressService, orderService, paymentService } from "@/services";
 import { getErrorMessage } from "@/services/api";
 import { formatPrice } from "@/utils/format";
+import { trackEvent } from "@/lib/analytics";
 import PageShell from "@/components/PageShell";
 import PageHeading from "@/components/PageHeading";
-import RequireLogin from "@/components/RequireLogin";
 import FormField from "@/components/FormField";
 import OrderSummaryPanel from "@/components/OrderSummaryPanel";
 
@@ -57,13 +58,39 @@ const validate = (form) => {
 
 const CheckoutForm = () => {
   const router = useRouter();
-  const { user } = useAuth();
-  const { cartItems, summary, refreshCart } = useCart();
+  const { user, isLoggedIn } = useAuth();
+  const {
+    cartItems,
+    summary,
+    refreshCart,
+    clearCart,
+    checkoutItems,
+    coupon,
+    couponCode,
+    applyCoupon,
+    removeCoupon,
+  } = useCart();
   const [form, setForm] = useState(() => buildInitialForm(user));
   const [errors, setErrors] = useState({});
   const [isCartReady, setIsCartReady] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [couponInput, setCouponInput] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(true);
   const isOrderPlaced = useRef(false);
+  const idempotencyKey = useRef(
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `order-${Date.now()}`,
+  );
+
+  const { data: paymentConfig } = useQuery({
+    queryKey: ["payment", "config"],
+    queryFn: paymentService.config,
+    staleTime: 5 * 60 * 1000,
+  });
+  const upiEnabled = Boolean(paymentConfig?.upiEnabled);
 
   useEffect(() => {
     refreshCart()
@@ -77,6 +104,30 @@ const CheckoutForm = () => {
       router.replace("/products");
     }
   }, [isCartReady, cartItems.length, router]);
+
+  useEffect(() => {
+    if (!isCartReady || cartItems.length === 0) return;
+    trackEvent("begin_checkout", {
+      currency: "INR",
+      value: summary.total,
+      items: cartItems.map((item) => ({
+        item_id: item.id ?? item._id,
+        item_name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+    });
+    // Fire once per checkout mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCartReady]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setIsApplyingCoupon(true);
+    const applied = await applyCoupon(couponInput);
+    if (applied) setCouponInput("");
+    setIsApplyingCoupon(false);
+  };
 
   const setField = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -96,10 +147,61 @@ const CheckoutForm = () => {
       const shippingAddress = Object.fromEntries(
         Object.entries(form).map(([key, value]) => [key, value.trim()]),
       );
-      const order = await orderService.place({ shippingAddress, paymentMethod: "COD" });
+      const body = {
+        shippingAddress,
+        paymentMethod,
+        couponCode: couponCode || undefined,
+      };
+      if (!isLoggedIn) body.items = checkoutItems;
+      const order = await orderService.place(body, idempotencyKey.current);
       isOrderPlaced.current = true;
-      await refreshCart().catch(() => {});
-      router.push(`/orders/${order._id}?placed=1`);
+
+      if (order.guestToken) {
+        try {
+          const saved = JSON.parse(localStorage.getItem("barware-guest-orders") || "{}");
+          saved[order._id] = order.guestToken;
+          localStorage.setItem("barware-guest-orders", JSON.stringify(saved));
+        } catch {
+          /* storage unavailable */
+        }
+      }
+
+      if (isLoggedIn && saveAddress) {
+        addressService
+          .create({
+            label: "Home",
+            fullName: shippingAddress.fullName,
+            phone: shippingAddress.phone,
+            line1: shippingAddress.line1,
+            line2: shippingAddress.line2,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            pincode: shippingAddress.pincode,
+            isDefault: true,
+          })
+          .catch(() => {});
+      }
+
+      trackEvent("purchase", {
+        transaction_id: order.orderNumber,
+        currency: "INR",
+        value: order.summary.total,
+        shipping: order.summary.shipping,
+        tax: order.summary.tax,
+        coupon: order.summary.couponCode || undefined,
+        items: order.items.map((item) => ({
+          item_id: item.product,
+          item_name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      });
+
+      await clearCart().catch(() => {});
+      const params = new URLSearchParams({ placed: "1" });
+      if (paymentMethod === "UPI") params.set("pay", "1");
+      if (order.guestToken) params.set("token", order.guestToken);
+      router.push(`/orders/${order._id}?${params.toString()}`);
     } catch (error) {
       toast.error(getErrorMessage(error));
       setIsPlacing(false);
@@ -186,22 +288,63 @@ const CheckoutForm = () => {
 
         <section className="bg-card border border-border rounded-2xl p-6">
           <h2 className="text-2xl font-display mb-5">PAYMENT METHOD</h2>
-          <label className="flex items-center gap-4 p-4 rounded-xl border border-primary bg-primary/5 cursor-pointer">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="COD"
-              checked
-              readOnly
-              className="accent-[var(--primary)] w-4 h-4"
-            />
-            <span>
-              <span className="block font-medium">Cash on Delivery</span>
-              <span className="block text-sm text-muted-foreground">
-                Pay in cash when your order arrives.
+          <div className="space-y-3">
+            <label
+              className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${
+                paymentMethod === "COD"
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="COD"
+                checked={paymentMethod === "COD"}
+                onChange={() => setPaymentMethod("COD")}
+                className="accent-[var(--primary)] w-4 h-4 mt-1"
+              />
+              <Banknote className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <span>
+                <span className="block font-medium">Cash on Delivery</span>
+                <span className="block text-sm text-muted-foreground">
+                  Pay in cash when your order arrives.
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+
+            {upiEnabled && (
+              <label
+                className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${
+                  paymentMethod === "UPI"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="UPI"
+                  checked={paymentMethod === "UPI"}
+                  onChange={() => setPaymentMethod("UPI")}
+                  className="accent-[var(--primary)] w-4 h-4 mt-1"
+                />
+                <QrCode className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <span>
+                  <span className="block font-medium">UPI / QR</span>
+                  <span className="block text-sm text-muted-foreground">
+                    Pay with PhonePe, Google Pay, Paytm or any UPI app. You will see a QR code
+                    after placing the order.
+                  </span>
+                </span>
+              </label>
+            )}
+          </div>
+          {paymentConfig && !upiEnabled && (
+            <p className="mt-4 text-xs text-muted-foreground">
+              UPI is temporarily unavailable. Please choose Cash on Delivery.
+            </p>
+          )}
         </section>
       </div>
 
@@ -223,7 +366,56 @@ const CheckoutForm = () => {
               </li>
             ))}
           </ul>
+          <div className="mb-5">
+            {coupon?.code ? (
+              <div className="flex items-center justify-between rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
+                <span className="inline-flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-primary" />
+                  <span className="font-medium uppercase">{coupon.code}</span>
+                  <span className="text-muted-foreground">applied</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Remove coupon"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  placeholder="Coupon code"
+                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm uppercase focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={isApplyingCoupon || !couponInput.trim()}
+                  className="px-4 py-2 rounded-lg border border-primary text-primary text-xs font-semibold uppercase tracking-widest hover:bg-primary/10 transition-colors disabled:opacity-50"
+                >
+                  {isApplyingCoupon ? "Applying..." : "Apply"}
+                </button>
+              </div>
+            )}
+          </div>
         </OrderSummaryPanel>
+
+        {isLoggedIn && (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+            <input
+              type="checkbox"
+              checked={saveAddress}
+              onChange={(e) => setSaveAddress(e.target.checked)}
+              className="accent-[var(--primary)]"
+            />
+            Save this address to my address book
+          </label>
+        )}
+
         <motion.button
           type="submit"
           whileHover={{ scale: 1.02 }}
@@ -250,11 +442,9 @@ const CheckoutPage = () => (
     <PageHeading
       title="SECURE"
       highlight="CHECKOUT"
-      subtitle="Review your details and place your order"
+      subtitle="No account needed — check out as a guest or sign in for faster checkout"
     />
-    <RequireLogin message="Please sign in to place your order.">
-      <CheckoutForm />
-    </RequireLogin>
+    <CheckoutForm />
   </PageShell>
 );
 

@@ -33,7 +33,7 @@ const Lookbook = () => {
       image: toolSets[1]?.images?.[1] ?? toolSets[1]?.image,
       title: "All Tool Sets",
       tag: "Collection",
-      href: "/category/bartender-tool-sets",
+      href: "/category/bar-tools",
       cta: "Browse All",
     },
   ].filter((shot) => shot.image);
@@ -50,7 +50,7 @@ const Lookbook = () => {
         >
           <div>
             <span className="text-primary font-medium tracking-widest uppercase text-sm">
-              Bartender Tool Sets
+              Bar Tools &amp; Sets
             </span>
             <h2 className="text-4xl md:text-6xl lg:text-7xl font-display mt-4">
               COMPLETE <span className="text-gradient">BAR SETS</span>

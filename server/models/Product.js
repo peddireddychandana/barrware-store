@@ -9,6 +9,14 @@ const keyValue = new mongoose.Schema(
   { _id: false },
 );
 
+const faq = new mongoose.Schema(
+  {
+    question: { type: String, required: true, trim: true, maxlength: 200 },
+    answer: { type: String, required: true, trim: true, maxlength: 1200 },
+  },
+  { _id: false },
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 140 },
@@ -28,6 +36,9 @@ const productSchema = new mongoose.Schema(
     },
     shortDescription: { type: String, trim: true, default: "", maxlength: 300 },
     description: { type: String, trim: true, default: "", maxlength: 4000 },
+    metaTitle: { type: String, trim: true, default: "", maxlength: 65 },
+    metaDescription: { type: String, trim: true, default: "", maxlength: 160 },
+    imageAltText: { type: String, trim: true, default: "", maxlength: 200 },
     price: { type: Number, required: true, min: 0 },
     originalPrice: { type: Number, required: true, min: 0 },
     category: {
@@ -50,6 +61,7 @@ const productSchema = new mongoose.Schema(
     specifications: { type: [keyValue], default: [] },
     features: { type: [String], default: [] },
     highlights: { type: [keyValue], default: [] },
+    faqs: { type: [faq], default: [] },
     images: { type: [String], default: [] },
     stock: { type: Number, required: true, min: 0, default: 0 },
     rating: { type: Number, default: 0, min: 0, max: 5 },

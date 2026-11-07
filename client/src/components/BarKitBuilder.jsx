@@ -32,7 +32,7 @@ const ProductTile = ({ product, isSelected, onToggle }) => {
       aria-pressed={isSelected}
       className={`group relative text-left overflow-hidden rounded-xl bg-card border transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
         isSelected
-          ? "border-primary shadow-[0_20px_60px_-15px_oklch(0.65_0.22_45_/_0.3)]"
+          ? "border-primary shadow-[0_20px_60px_-15px_rgba(217,165,46,0.25)]"
           : "border-border hover:border-primary/40"
       }`}
     >
@@ -129,7 +129,7 @@ const KitSummary = ({
             <dt className="text-muted-foreground">Subtotal</dt>
             <dd>{formatPrice(quote.subtotal)}</dd>
           </div>
-          <div className="flex justify-between text-green-600">
+          <div className="flex justify-between text-primary">
             <dt>Kit discount ({quote.kitDiscountPercent}%)</dt>
             <dd>-{formatPrice(quote.kitDiscount)}</dd>
           </div>

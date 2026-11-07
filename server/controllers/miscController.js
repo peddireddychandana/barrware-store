@@ -1,5 +1,6 @@
 const Review = require("../models/Review");
 const Product = require("../models/Product");
+const Order = require("../models/Order");
 const Subscriber = require("../models/Subscriber");
 const AppError = require("../utils/AppError");
 const { sendSuccess, sendList, parsePagination } = require("../utils/response");
@@ -12,12 +13,20 @@ exports.createReview = async (req, res) => {
     throw new AppError("Product not found", 404);
   if (await Review.exists({ user: req.user._id, product: productId }))
     throw new AppError("You have already reviewed this product", 409);
+  const verifiedPurchase = Boolean(
+    await Order.exists({
+      user: req.user._id,
+      status: "delivered",
+      "items.product": productId,
+    }),
+  );
   const review = await Review.create({
     user: req.user._id,
     product: productId,
     rating,
     title,
     comment,
+    verifiedPurchase,
   });
   await recalculateProductRating(productId);
   await review.populate("user", "name");
@@ -34,12 +43,13 @@ exports.latestReviews = async (req, res) => {
     { path: "user", select: "name" },
     { path: "product", select: "name slug images" },
   ];
-  let reviews = await Review.find({ rating: { $gte: 4 } })
+  const visible = { isApproved: true, isHidden: false };
+  let reviews = await Review.find({ ...visible, rating: { $gte: 4 } })
     .sort({ createdAt: -1 })
     .limit(limit)
     .populate(populate);
   if (reviews.length < limit) {
-    const rest = await Review.find({ rating: { $lt: 4 } })
+    const rest = await Review.find({ ...visible, rating: { $lt: 4 } })
       .sort({ createdAt: -1 })
       .limit(limit - reviews.length)
       .populate(populate);

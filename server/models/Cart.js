@@ -23,6 +23,7 @@ const cartSchema = new mongoose.Schema(
       unique: true,
     },
     items: { type: [cartItemSchema], default: [] },
+    couponCode: { type: String, default: "", uppercase: true, trim: true },
   },
   { timestamps: true },
 );

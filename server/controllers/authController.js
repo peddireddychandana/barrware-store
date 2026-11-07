@@ -4,6 +4,7 @@ const env = require("../config/env");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
 const { attachAuthCookie, clearAuthCookie } = require("../utils/token");
+const { sendPasswordResetEmail } = require("../services/emailService");
 
 const hashToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
@@ -47,7 +48,10 @@ exports.updateMe = async (req, res) => {
   sendSuccess(res, req.user, { message: "Profile updated" });
 };
 
-/** Always answers generically; logs the reset link (no SMTP) and returns it only in development. */
+/**
+ * Always answers generically. Emails the reset link when a mail provider is configured,
+ * logs it in development, and returns it in development/test.
+ */
 exports.forgotPassword = async (req, res) => {
   const message =
     "If an account exists for that email, a reset link has been sent";
@@ -59,8 +63,9 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
     const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
-    if (env.nodeEnv !== "test")
+    if (env.nodeEnv === "development")
       console.log(`[password reset] ${user.email}: ${resetUrl}`);
+    sendPasswordResetEmail(user, resetUrl).catch(() => {});
     if (env.nodeEnv === "development" || env.nodeEnv === "test")
       data.resetUrl = resetUrl;
   }

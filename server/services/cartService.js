@@ -4,6 +4,7 @@ const Product = require("../models/Product");
 const AppError = require("../utils/AppError");
 const { MAX_ITEM_QUANTITY } = require("../config/store");
 const { computeSummary } = require("./pricing");
+const couponService = require("./couponService");
 
 const PRODUCT_POPULATE = {
   path: "items.product",
@@ -57,10 +58,30 @@ async function buildCartView(cart) {
     quantity: i.quantity,
     ...(i.kitId ? { kitId: i.kitId } : {}),
   }));
-  return { items, summary: viewSummary(items) };
+
+  const base = viewSummary(items);
+  let coupon = null;
+  if (cart.couponCode) {
+    const doc = await couponService.findByCode(cart.couponCode);
+    const payable = round2(base.total - base.shipping);
+    if (couponService.isValid(doc, payable, cart.user)) {
+      coupon = couponService.toDescriptor(doc);
+    } else {
+      cart.couponCode = "";
+      await cart.save();
+    }
+  }
+
+  return {
+    items,
+    summary: viewSummary(items, coupon),
+    coupon: coupon ? { code: coupon.code, description: "" } : null,
+  };
 }
 
-const viewSummary = (items) =>
+const round2 = (n) => Math.round(n * 100) / 100;
+
+const viewSummary = (items, coupon = null) =>
   computeSummary(
     items.map((i) => ({
       price: i.product.price,
@@ -68,6 +89,7 @@ const viewSummary = (items) =>
       quantity: i.quantity,
       kitId: i.kitId,
     })),
+    coupon,
   );
 
 async function addItem(userId, productId, qty) {
@@ -117,6 +139,25 @@ async function removeItem(userId, productId) {
 async function clearCart(userId) {
   const cart = await getOrCreateCart(userId);
   cart.items = [];
+  cart.couponCode = "";
+  await cart.save();
+  return buildCartView(cart);
+}
+
+/** Validates and stores a coupon code on the cart. */
+async function applyCoupon(userId, code) {
+  const cart = await getOrCreateCart(userId);
+  const view = await buildCartView(cart);
+  const payable = round2(view.summary.total - view.summary.shipping);
+  const coupon = await couponService.requireValid(code, payable, userId);
+  cart.couponCode = coupon.code;
+  await cart.save();
+  return buildCartView(cart);
+}
+
+async function removeCoupon(userId) {
+  const cart = await getOrCreateCart(userId);
+  cart.couponCode = "";
   await cart.save();
   return buildCartView(cart);
 }
@@ -139,7 +180,7 @@ async function addKit(userId, kitItems) {
 }
 
 /** Guest quote: same shape as the cart view, nothing persisted. */
-async function quote(requested) {
+async function quote(requested, code = "") {
   const totals = new Map();
   for (const { productId, quantity } of requested)
     totals.set(productId, (totals.get(productId) || 0) + quantity);
@@ -155,7 +196,14 @@ async function quote(requested) {
     assertStock(product, qty);
     items.push({ product, quantity: qty });
   }
-  return { items, summary: viewSummary(items) };
+  const base = viewSummary(items);
+  let coupon = null;
+  if (code) {
+    const payable = round2(base.total - base.shipping);
+    const doc = await couponService.requireValid(code, payable, null);
+    coupon = couponService.toDescriptor(doc);
+  }
+  return { items, summary: viewSummary(items, coupon) };
 }
 
 module.exports = {
@@ -165,6 +213,8 @@ module.exports = {
   setQuantity,
   removeItem,
   clearCart,
+  applyCoupon,
+  removeCoupon,
   addKit,
   quote,
 };

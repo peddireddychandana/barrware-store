@@ -182,6 +182,8 @@ async function update(id, input) {
   const patch = { ...input };
   if (input.category)
     patch.category = (await resolveCategory(input.category))._id;
+  if (input.slug !== undefined)
+    patch.slug = input.slug || slugify(input.name || product.name);
   product.set(patch);
   await product.save();
   return findByIdOrSlug(product._id, { includeInactive: true });

@@ -45,8 +45,8 @@ const AboutPage = () => (
       <p>
         A good cocktail comes down to good tools: a shaker that seals and chills, a strainer that
         pours clean, a jigger that measures true. We collect the essentials in one place, from
-        cocktail shakers, strainers and muddlers to jiggers, bar spoons, ice tongs, bottle pourers,
-        mixing glasses, glassware and wine accessories.
+        shakers, strainers and bar tools to jiggers, spoons, ice accessories, pourers, pitchers,
+        glassware and drinkware.
       </p>
       <p>
         You can buy a single piece, or build your own bar kit from six essential tools and save as

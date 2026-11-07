@@ -5,10 +5,16 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LoginModal from "@/components/LoginModal";
 import ProductListing from "@/components/ProductListing";
+import SEOHead from "@/components/SEOHead";
 
 const AllProductsPage = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Shop All Barware | VYRNT Fine Barware"
+        description="Browse VYRNT's complete collection of premium barware tools and accessories. Free shipping above ₹999 and Cash on Delivery available."
+        path="/products"
+      />
       <Navbar />
       <LoginModal />
 

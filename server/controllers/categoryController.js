@@ -33,7 +33,10 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   const category = await Category.findById(req.params.id);
   if (!category) throw new AppError("Category not found", 404);
-  category.set(req.body);
+  const patch = { ...req.body };
+  if (req.body.slug !== undefined)
+    patch.slug = req.body.slug || slugify(req.body.name || category.name);
+  category.set(patch);
   await category.save();
   sendSuccess(res, category, { message: "Category updated" });
 };

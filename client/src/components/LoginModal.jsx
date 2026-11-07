@@ -93,7 +93,7 @@ const LoginModal = () => {
                 {isForgot
                   ? "Enter your email and we'll send a reset link"
                   : isSignUp
-                    ? "Join the Barware Store family today"
+                    ? "Join the Vyrnt family today"
                     : "Sign in to continue shopping"}
               </p>
             </div>

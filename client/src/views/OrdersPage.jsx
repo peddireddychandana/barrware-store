@@ -24,7 +24,7 @@ const OrderRow = ({ order, index }) => {
     >
       <Link
         href={`/orders/${order._id}`}
-        className="block bg-card border border-border rounded-2xl p-5 transition-all hover:border-primary/40 hover:shadow-[0_20px_60px_-15px_oklch(0.65_0.22_45_/_0.3)]"
+        className="block bg-card border border-border rounded-2xl p-5 transition-all hover:border-primary/40 hover:shadow-[0_20px_60px_-15px_rgba(217,165,46,0.25)]"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
@@ -60,14 +60,11 @@ const OrderRow = ({ order, index }) => {
 
 const OrdersList = () => {
   const { user } = useAuth();
-  const {
-    data: orders,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["orders", user?._id],
     queryFn: orderService.mine,
   });
+  const orders = data?.items ?? [];
 
   if (isLoading)
     return <p className="py-24 text-center text-muted-foreground">Loading your orders...</p>;

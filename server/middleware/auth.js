@@ -27,6 +27,20 @@ async function protect(req, _res, next) {
   next();
 }
 
+/** Attaches req.user when a valid token is present, but never rejects the request. */
+async function optionalAuth(req, _res, next) {
+  const token = extractToken(req);
+  if (!token) return next();
+  try {
+    const payload = jwt.verify(token, env.jwtSecret);
+    const user = await User.findById(payload.id);
+    if (user) req.user = user;
+  } catch {
+    // Ignore invalid tokens for optional auth.
+  }
+  next();
+}
+
 /** Allows only the listed roles; must run after protect. */
 const restrictTo =
   (...roles) =>
@@ -39,4 +53,4 @@ const restrictTo =
     next();
   };
 
-module.exports = { protect, restrictTo };
+module.exports = { protect, optionalAuth, restrictTo };

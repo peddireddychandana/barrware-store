@@ -6,4 +6,8 @@ module.exports = {
   Order: require("./Order"),
   Review: require("./Review"),
   Subscriber: require("./Subscriber"),
+  Coupon: require("./Coupon"),
+  Wishlist: require("./Wishlist"),
+  ReturnRequest: require("./ReturnRequest"),
+  Inquiry: require("./Inquiry"),
 };

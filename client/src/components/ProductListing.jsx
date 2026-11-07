@@ -30,8 +30,8 @@ const Chip = ({ active, onClick, children }) => (
     whileTap={{ scale: 0.95 }}
     className={`px-4 py-1.5 rounded-full text-xs font-medium uppercase tracking-widest border transition-all ${
       active
-        ? "bg-primary text-primary-foreground border-primary neon-glow"
-        : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-foreground"
+        ? "bg-primary text-primary-foreground border-primary neon-glow hover:bg-accent"
+        : "bg-secondary/50 text-muted-foreground border-primary/30 hover:border-primary hover:text-primary"
     }`}
   >
     {children}
@@ -102,7 +102,7 @@ const ProductListing = ({ fixedCategory, showCategoryTabs = true }) => {
               className={`px-6 py-2 rounded-full font-medium uppercase tracking-wide text-sm transition-all duration-300 ${
                 categorySlug === cat.slug
                   ? "gradient-neon text-primary-foreground neon-glow"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-primary"
               }`}
             >
               {cat.name}
@@ -126,7 +126,7 @@ const ProductListing = ({ fixedCategory, showCategoryTabs = true }) => {
         <button
           type="button"
           onClick={() => setIsFilterOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-secondary border border-border rounded-full text-sm font-medium hover:border-primary transition-colors"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-secondary border border-primary/40 text-primary rounded-full text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
         >
           <SlidersHorizontal className="w-4 h-4" />
           Filters

@@ -6,7 +6,7 @@ process.env.ADMIN_PASSWORD = "Admin@12345";
 const mongoose = require("mongoose");
 const request = require("supertest");
 const createApp = require("../app");
-const { runSeed } = require("../seed/seed");
+const { seedCatalog } = require("./fixtures/seedCatalog");
 
 const app = createApp();
 const CUSTOMER = { email: "aarav@example.com", password: "Customer@123" };
@@ -15,7 +15,7 @@ const ADMIN = { email: "admin@barware.test", password: "Admin@12345" };
 /** Connects to a fresh per-file database on the shared in-memory server and seeds it. */
 async function setupDb(name) {
   await mongoose.connect(`${process.env.TEST_MONGO_URI}${name}`);
-  await runSeed({ log: () => {} });
+  await seedCatalog({ log: () => {} });
 }
 
 const teardownDb = async () => {

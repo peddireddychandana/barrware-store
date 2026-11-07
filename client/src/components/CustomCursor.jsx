@@ -58,7 +58,7 @@ const CustomCursor = () => {
         <motion.div
           animate={{
             scale: isHovering ? 1.6 : 1,
-            borderColor: isHovering ? "oklch(0.65 0.22 45 / 0.8)" : "oklch(0.65 0.22 45 / 0.3)",
+            borderColor: isHovering ? "rgba(217, 165, 46, 0.8)" : "rgba(217, 165, 46, 0.3)",
           }}
           className="-translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full border"
         />

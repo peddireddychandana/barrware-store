@@ -8,6 +8,8 @@
     "dev": "node --watch server.js",
     "start": "node server.js",
     "seed": "node seed/seed.js",
+    "seed:admin": "node scripts/create-admin.js",
+    "categories:sync": "node scripts/sync-categories.js",
     "db": "node scripts/dev-db.js",
     "test": "jest --runInBand --forceExit"
   },

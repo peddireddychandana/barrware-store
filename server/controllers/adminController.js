@@ -81,8 +81,33 @@ exports.updateOrderStatus = async (req, res) => {
     order,
     req.body.status,
     req.body.note,
+    req.body.tracking,
   );
   sendSuccess(res, updated, { message: `Order marked ${updated.status}` });
+};
+
+exports.updateTracking = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id))
+    throw new AppError("Order not found", 404);
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new AppError("Order not found", 404);
+  const updated = await orderService.setTracking(order, req.body);
+  sendSuccess(res, updated, { message: "Tracking details saved" });
+};
+
+exports.updatePaymentStatus = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id))
+    throw new AppError("Order not found", 404);
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new AppError("Order not found", 404);
+  const updated = await orderService.adminSetPaymentStatus(
+    order,
+    req.body.status,
+    req.body.note,
+  );
+  sendSuccess(res, updated, {
+    message: `Payment marked ${req.body.status}`,
+  });
 };
 
 exports.customers = async (req, res) => {

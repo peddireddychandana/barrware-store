@@ -29,4 +29,17 @@ module.exports = {
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
+  mail: {
+    // Transactional email: set BREVO_API_KEY (300/day free) or RESEND_API_KEY (3,000/month free).
+    brevoApiKey: process.env.BREVO_API_KEY || "",
+    resendApiKey: process.env.RESEND_API_KEY || "",
+    fromEmail: process.env.MAIL_FROM || process.env.ADMIN_EMAIL || "no-reply@example.com",
+    fromName: process.env.MAIL_FROM_NAME || "VYRNT",
+    adminEmail: process.env.ADMIN_EMAIL || "",
+  },
+  payment: {
+    // Direct UPI payments: customers scan a QR and pay the owner; an admin verifies the reference.
+    upiId: process.env.UPI_ID || "",
+    upiPayeeName: process.env.UPI_PAYEE_NAME || "VYRNT",
+  },
 };

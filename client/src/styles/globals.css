@@ -45,6 +45,21 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-vyrnt-black: var(--vyrnt-black);
+  --color-vyrnt-gold: var(--vyrnt-gold);
+  --color-vyrnt-champagne: var(--vyrnt-champagne);
+  --color-vyrnt-copper: var(--vyrnt-copper);
+  --color-vyrnt-bronze: var(--vyrnt-bronze);
+  --color-vyrnt-steel: var(--vyrnt-steel);
+  --color-vyrnt-crimson: var(--vyrnt-crimson);
+  --color-gold: var(--vyrnt-gold);
+  --color-champagne: var(--vyrnt-champagne);
+  --color-copper: var(--vyrnt-copper);
+  --color-bronze: var(--vyrnt-bronze);
+  --color-steel: var(--vyrnt-steel);
+  --color-crimson: var(--vyrnt-crimson);
+  --color-ivory: var(--vyrnt-ivory);
+
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
 
@@ -60,72 +75,89 @@
 }
 
 :root {
+  /* Luxury Black & Gold (Amber) palette */
+  --vyrnt-black: #0b0908;
+  --vyrnt-espresso: #21150f;
+  --vyrnt-bronze: #6b3e1e;
+  --vyrnt-copper: #b87927;
+  --vyrnt-gold: #d9a52e;
+  --vyrnt-champagne: #f2d18a;
+  --vyrnt-steel: #d6c7b5;
+  --vyrnt-crimson: #5a0d15;
+  --vyrnt-crimson-light: #b84052;
+
+  /* Supporting neutrals derived from the palette */
+  --vyrnt-ivory: #d6c7b5;
+  --vyrnt-charcoal: #17120f;
+  --vyrnt-charcoal-soft: #21150f;
+  --vyrnt-border: #6b3e1e;
+
   --radius: 0.5rem;
-  --background: oklch(0.15 0 0);
-  --foreground: oklch(0.97 0.005 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.97 0.005 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.97 0.005 0);
-  --primary: oklch(0.65 0.22 45);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.22 0.01 0);
-  --secondary-foreground: oklch(0.97 0.005 0);
-  --muted: oklch(0.25 0.01 0);
-  --muted-foreground: oklch(0.7 0.02 0);
-  --accent: oklch(0.7 0.2 195);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.6 0.2 25);
-  --destructive-foreground: oklch(0.97 0.005 0);
-  --border: oklch(0.3 0 0);
-  --input: oklch(0.3 0 0);
-  --ring: oklch(0.65 0.22 45);
-  --chart-1: oklch(0.65 0.22 45);
-  --chart-2: oklch(0.7 0.2 195);
-  --chart-3: oklch(0.55 0.18 260);
-  --chart-4: oklch(0.75 0.18 85);
-  --chart-5: oklch(0.6 0.2 160);
-  --sidebar: oklch(0.2 0 0);
-  --sidebar-foreground: oklch(0.97 0.005 0);
-  --sidebar-primary: oklch(0.65 0.22 45);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.25 0.01 0);
-  --sidebar-accent-foreground: oklch(0.97 0.005 0);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.65 0.22 45);
+  --background: var(--vyrnt-black);
+  --foreground: var(--vyrnt-ivory);
+  --card: var(--vyrnt-charcoal);
+  --card-foreground: var(--vyrnt-ivory);
+  --popover: var(--vyrnt-charcoal);
+  --popover-foreground: var(--vyrnt-ivory);
+  --primary: var(--vyrnt-gold);
+  --primary-foreground: var(--vyrnt-black);
+  --secondary: var(--vyrnt-charcoal-soft);
+  --secondary-foreground: var(--vyrnt-champagne);
+  --muted: var(--vyrnt-espresso);
+  --muted-foreground: #b7a48e;
+  --accent: var(--vyrnt-copper);
+  --accent-foreground: var(--vyrnt-black);
+  --destructive: var(--vyrnt-crimson);
+  --destructive-foreground: var(--vyrnt-ivory);
+  --border: var(--vyrnt-border);
+  --input: var(--vyrnt-border);
+  --ring: var(--vyrnt-gold);
+  --chart-1: var(--vyrnt-gold);
+  --chart-2: var(--vyrnt-copper);
+  --chart-3: var(--vyrnt-champagne);
+  --chart-4: var(--vyrnt-bronze);
+  --chart-5: var(--vyrnt-ivory);
+  --sidebar: var(--vyrnt-black);
+  --sidebar-foreground: var(--vyrnt-ivory);
+  --sidebar-primary: var(--vyrnt-gold);
+  --sidebar-primary-foreground: var(--vyrnt-black);
+  --sidebar-accent: var(--vyrnt-charcoal-soft);
+  --sidebar-accent-foreground: var(--vyrnt-champagne);
+  --sidebar-border: var(--vyrnt-border);
+  --sidebar-ring: var(--vyrnt-gold);
 
   --font-sans: "Inter", system-ui, sans-serif;
   --font-display: "Bebas Neue", Impact, sans-serif;
 }
 
 .dark {
-  --background: oklch(0.15 0 0);
-  --foreground: oklch(0.97 0.005 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.97 0.005 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.97 0.005 0);
-  --primary: oklch(0.65 0.22 45);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.22 0.01 0);
-  --secondary-foreground: oklch(0.97 0.005 0);
-  --muted: oklch(0.25 0.01 0);
-  --muted-foreground: oklch(0.7 0.02 0);
-  --accent: oklch(0.7 0.2 195);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.6 0.2 25);
-  --destructive-foreground: oklch(0.97 0.005 0);
-  --border: oklch(0.3 0 0);
-  --input: oklch(0.3 0 0);
-  --ring: oklch(0.65 0.22 45);
-  --sidebar: oklch(0.2 0 0);
-  --sidebar-foreground: oklch(0.97 0.005 0);
-  --sidebar-primary: oklch(0.65 0.22 45);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.25 0.01 0);
-  --sidebar-accent-foreground: oklch(0.97 0.005 0);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.65 0.22 45);
+  --background: var(--vyrnt-black);
+  --foreground: var(--vyrnt-ivory);
+  --card: var(--vyrnt-charcoal);
+  --card-foreground: var(--vyrnt-ivory);
+  --popover: var(--vyrnt-charcoal);
+  --popover-foreground: var(--vyrnt-ivory);
+  --primary: var(--vyrnt-gold);
+  --primary-foreground: var(--vyrnt-black);
+  --secondary: var(--vyrnt-charcoal-soft);
+  --secondary-foreground: var(--vyrnt-champagne);
+  --muted: var(--vyrnt-espresso);
+  --muted-foreground: #b7a48e;
+  --accent: var(--vyrnt-copper);
+  --accent-foreground: var(--vyrnt-black);
+  --destructive: var(--vyrnt-crimson);
+  --destructive-foreground: var(--vyrnt-ivory);
+  --border: var(--vyrnt-border);
+  --input: var(--vyrnt-border);
+  --ring: var(--vyrnt-gold);
+  --sidebar: var(--vyrnt-black);
+  --sidebar-foreground: var(--vyrnt-ivory);
+  --sidebar-primary: var(--vyrnt-gold);
+  --sidebar-primary-foreground: var(--vyrnt-black);
+  --sidebar-accent: var(--vyrnt-charcoal-soft);
+  --sidebar-accent-foreground: var(--vyrnt-champagne);
+  --sidebar-border: var(--vyrnt-border);
+  --sidebar-ring: var(--vyrnt-gold);
 }
 
 @layer base {
@@ -139,8 +171,19 @@
 
   body {
     background-color: var(--color-background);
+    background-image: radial-gradient(
+      1200px circle at 50% -20%,
+      color-mix(in srgb, var(--vyrnt-bronze) 14%, transparent),
+      transparent 55%
+    );
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: var(--vyrnt-gold);
+    color: var(--vyrnt-black);
   }
 
   h1,
@@ -151,61 +194,85 @@
   h6 {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
+    color: var(--vyrnt-champagne);
   }
 }
 
 @layer components {
   .neon-glow {
     box-shadow:
-      0 0 20px oklch(0.65 0.22 45 / 0.5),
-      0 0 40px oklch(0.65 0.22 45 / 0.3),
-      0 0 60px oklch(0.65 0.22 45 / 0.1);
+      0 0 18px color-mix(in srgb, var(--vyrnt-gold) 28%, transparent),
+      0 0 42px color-mix(in srgb, var(--vyrnt-bronze) 22%, transparent);
   }
 
   .neon-glow-accent {
     box-shadow:
-      0 0 20px oklch(0.7 0.2 195 / 0.5),
-      0 0 40px oklch(0.7 0.2 195 / 0.3);
+      0 0 20px color-mix(in srgb, var(--vyrnt-bronze) 35%, transparent),
+      0 0 40px color-mix(in srgb, var(--vyrnt-gold) 12%, transparent);
   }
 
   .card-shadow {
-    box-shadow: 0 10px 40px -10px oklch(0 0 0 / 0.5);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.65);
   }
 
   .card-shadow-hover {
-    box-shadow: 0 20px 60px -15px oklch(0.65 0.22 45 / 0.3);
+    box-shadow: 0 20px 60px -15px color-mix(in srgb, var(--vyrnt-gold) 22%, transparent);
   }
 
   .gradient-hero {
-    background: linear-gradient(135deg, oklch(0.2 0 0) 0%, oklch(0.12 0 0) 100%);
+    background:
+      radial-gradient(
+        circle at 20% 0%,
+        color-mix(in srgb, var(--vyrnt-bronze) 24%, transparent),
+        transparent 55%
+      ),
+      linear-gradient(135deg, #17120f 0%, var(--vyrnt-black) 60%, #21150f 100%);
   }
 
   .gradient-card {
-    background: linear-gradient(180deg, oklch(0.22 0 0) 0%, oklch(0.16 0 0) 100%);
+    background: linear-gradient(180deg, #17120f 0%, var(--vyrnt-black) 100%);
   }
 
   .gradient-neon {
-    background: linear-gradient(90deg, oklch(0.65 0.22 45) 0%, oklch(0.72 0.2 55) 100%);
+    background: linear-gradient(
+      120deg,
+      var(--vyrnt-gold) 0%,
+      var(--vyrnt-champagne) 45%,
+      var(--vyrnt-copper) 100%
+    );
+    transition:
+      background-color 0.3s ease,
+      filter 0.3s ease,
+      opacity 0.3s ease;
+  }
+
+  .gradient-neon:hover {
+    background: var(--vyrnt-copper);
   }
 
   .gradient-overlay {
-    background: linear-gradient(180deg, transparent 0%, oklch(0 0 0 / 0.8) 100%);
+    background: linear-gradient(180deg, transparent 0%, rgba(11, 9, 8, 0.9) 100%);
   }
 
   .text-gradient {
     background-clip: text;
     color: transparent;
-    background-image: linear-gradient(90deg, oklch(0.65 0.22 45) 0%, oklch(0.72 0.2 55) 100%);
+    background-image: linear-gradient(
+      90deg,
+      var(--vyrnt-champagne) 0%,
+      var(--vyrnt-gold) 45%,
+      var(--vyrnt-copper) 100%
+    );
   }
 
   .nav-link {
     position: relative;
     transition: color 0.3s ease;
-    color: oklch(0.97 0.005 0 / 0.8);
+    color: color-mix(in srgb, var(--vyrnt-steel) 88%, transparent);
   }
 
   .nav-link:hover {
-    color: oklch(0.97 0.005 0);
+    color: var(--vyrnt-gold);
   }
 
   .nav-link::after {
@@ -216,7 +283,7 @@
     height: 0.125rem;
     width: 0;
     transition: all 0.3s ease;
-    background-color: oklch(0.65 0.22 45);
+    background-color: var(--vyrnt-gold);
   }
 
   .nav-link:hover::after {
@@ -229,18 +296,22 @@
 
   .card-hover:hover {
     transform: translateY(-0.5rem);
-    box-shadow: 0 20px 60px -15px oklch(0.65 0.22 45 / 0.3);
+    box-shadow: 0 20px 60px -15px color-mix(in srgb, var(--vyrnt-gold) 22%, transparent);
   }
 
   .input-glow:focus {
     box-shadow:
-      0 0 0 2px oklch(0.65 0.22 45),
-      0 0 20px oklch(0.65 0.22 45 / 0.5),
-      0 0 40px oklch(0.65 0.22 45 / 0.3);
+      0 0 0 2px var(--vyrnt-gold),
+      0 0 20px color-mix(in srgb, var(--vyrnt-gold) 35%, transparent);
   }
 }
 
 @layer utilities {
+  /* Keep crimson text legible on rich black while surfaces use the official deep crimson. */
+  .text-destructive {
+    color: var(--vyrnt-crimson-light) !important;
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -273,15 +344,13 @@
   0%,
   100% {
     box-shadow:
-      0 0 20px oklch(0.65 0.22 45 / 0.5),
-      0 0 40px oklch(0.65 0.22 45 / 0.3),
-      0 0 60px oklch(0.65 0.22 45 / 0.1);
+      0 0 18px color-mix(in srgb, var(--vyrnt-gold) 28%, transparent),
+      0 0 42px color-mix(in srgb, var(--vyrnt-bronze) 18%, transparent);
   }
   50% {
     box-shadow:
-      0 0 30px oklch(0.65 0.22 45 / 0.7),
-      0 0 60px oklch(0.65 0.22 45 / 0.5),
-      0 0 90px oklch(0.65 0.22 45 / 0.3);
+      0 0 26px color-mix(in srgb, var(--vyrnt-gold) 40%, transparent),
+      0 0 56px color-mix(in srgb, var(--vyrnt-bronze) 28%, transparent);
   }
 }
 

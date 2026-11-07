@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Link from "@/components/AppLink";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Ban, Loader2 } from "lucide-react";
+import { ArrowLeft, Ban, Loader2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { adminService, orderService } from "@/services";
 import { getErrorMessage } from "@/services/api";
@@ -16,6 +16,7 @@ import {
   primaryButtonClass,
 } from "@/components/admin/AdminUi";
 import {
+  PaymentStatusBadge,
   StatusBadge,
   formatDateTime,
   nextStatuses,
@@ -97,6 +98,121 @@ const StatusUpdateForm = ({ order, onUpdated }) => {
   );
 };
 
+const PaymentUpdateForm = ({ order, onUpdated }) => {
+  const update = useMutation({
+    mutationFn: (status) => adminService.updatePaymentStatus(order._id, { status }),
+    onSuccess: (_data, status) => {
+      toast.success(status === "paid" ? "Payment marked as received" : "Payment marked as failed");
+      onUpdated();
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
+  if (order.paymentMethod !== "UPI") {
+    return (
+      <p className="p-5 text-sm text-muted-foreground">
+        Cash on Delivery — collect {formatPrice(order.summary.total)} when the order is delivered.
+      </p>
+    );
+  }
+
+  return (
+    <div className="p-5 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-muted-foreground">Payment status</span>
+        <PaymentStatusBadge status={order.paymentStatus} />
+      </div>
+
+      <div className="space-y-1 text-sm">
+        <InfoLine label="Amount">{formatPrice(order.summary.total)}</InfoLine>
+        <InfoLine label="Reference">
+          {order.paymentReference || <span className="text-muted-foreground">Not submitted</span>}
+        </InfoLine>
+        {order.paymentSubmittedAt && (
+          <InfoLine label="Submitted">{formatDateTime(order.paymentSubmittedAt)}</InfoLine>
+        )}
+        {order.paidAt && <InfoLine label="Confirmed">{formatDateTime(order.paidAt)}</InfoLine>}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Check your UPI app or bank statement for this reference before confirming.
+      </p>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button
+          type="button"
+          onClick={() => update.mutate("paid")}
+          disabled={update.isPending || order.paymentStatus === "paid"}
+          className={`${primaryButtonClass} flex-1`}
+        >
+          {update.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          Mark paid
+        </button>
+        <button
+          type="button"
+          onClick={() => update.mutate("failed")}
+          disabled={update.isPending || order.paymentStatus === "failed"}
+          className="flex-1 px-4 py-2.5 rounded-lg border border-destructive text-destructive text-sm font-semibold uppercase tracking-wide hover:bg-destructive/10 transition-colors disabled:opacity-50"
+        >
+          Mark failed
+        </button>
+      </div>
+
+      {order.paymentStatus === "paid" && order.status === "placed" && (
+        <p className="text-xs text-muted-foreground">
+          Payment confirmed. You can now move this order to Confirmed.
+        </p>
+      )}
+    </div>
+  );
+};
+
+const TrackingForm = ({ order, onUpdated }) => {
+  const [form, setForm] = useState({
+    carrier: order.tracking?.carrier ?? "",
+    number: order.tracking?.number ?? "",
+    url: order.tracking?.url ?? "",
+  });
+  const save = useMutation({
+    mutationFn: () =>
+      adminService.updateTracking(order._id, {
+        carrier: form.carrier.trim(),
+        number: form.number.trim(),
+        url: form.url.trim(),
+      }),
+    onSuccess: () => {
+      toast.success("Tracking details saved");
+      onUpdated();
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  const setField = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+      className="p-5 space-y-4"
+    >
+      <Field label="Courier">
+        <input value={form.carrier} onChange={setField("carrier")} maxLength={80} className={inputClass} placeholder="Delhivery / Blue Dart" />
+      </Field>
+      <Field label="AWB / Tracking number">
+        <input value={form.number} onChange={setField("number")} maxLength={80} className={inputClass} />
+      </Field>
+      <Field label="Tracking URL (optional)">
+        <input value={form.url} onChange={setField("url")} maxLength={300} className={inputClass} placeholder="https://..." />
+      </Field>
+      <button type="submit" disabled={save.isPending} className={`${primaryButtonClass} w-full`}>
+        {save.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
+        Save tracking
+      </button>
+    </form>
+  );
+};
+
 const OrderDetail = ({ order, onUpdated }) => {
   const { shippingAddress: address, summary } = order;
   return (
@@ -154,16 +270,32 @@ const OrderDetail = ({ order, onUpdated }) => {
           <Panel title="PAYMENT & SUMMARY">
             <div className="p-5">
               <InfoLine label="Payment method">
-                {order.paymentMethod === "COD" ? "Cash on delivery" : order.paymentMethod}
+                {order.paymentMethod === "COD" ? "Cash on delivery" : "UPI / QR"}
               </InfoLine>
+              {order.paymentMethod === "UPI" && (
+                <InfoLine label="Payment status">
+                  <PaymentStatusBadge status={order.paymentStatus} />
+                </InfoLine>
+              )}
+              {order.paymentReference && (
+                <InfoLine label="Reference">{order.paymentReference}</InfoLine>
+              )}
               <InfoLine label="Subtotal">{formatPrice(summary.subtotal)}</InfoLine>
               <InfoLine label="Discount">-{formatPrice(summary.discount)}</InfoLine>
               {summary.kitDiscount > 0 && (
                 <InfoLine label="Kit discount">-{formatPrice(summary.kitDiscount)}</InfoLine>
               )}
+              {summary.couponDiscount > 0 && (
+                <InfoLine label={`Coupon ${summary.couponCode}`}>
+                  -{formatPrice(summary.couponDiscount)}
+                </InfoLine>
+              )}
               <InfoLine label="Shipping">
                 {summary.shipping ? formatPrice(summary.shipping) : "Free"}
               </InfoLine>
+              {summary.tax > 0 && (
+                <InfoLine label="Includes GST">{formatPrice(summary.tax)}</InfoLine>
+              )}
               <div className="flex justify-between pt-3 mt-2 border-t border-border text-lg font-medium">
                 <span>Total</span>
                 <span className="text-gradient">{formatPrice(summary.total)}</span>
@@ -174,8 +306,16 @@ const OrderDetail = ({ order, onUpdated }) => {
       </div>
 
       <div className="space-y-6">
+        <Panel title="PAYMENT VERIFICATION">
+          <PaymentUpdateForm key={order.paymentStatus} order={order} onUpdated={onUpdated} />
+        </Panel>
+
         <Panel title="UPDATE STATUS">
           <StatusUpdateForm key={order.status} order={order} onUpdated={onUpdated} />
+        </Panel>
+
+        <Panel title="SHIPMENT TRACKING">
+          <TrackingForm key={`${order.tracking?.number}-${order.tracking?.carrier}`} order={order} onUpdated={onUpdated} />
         </Panel>
 
         <Panel title="STATUS HISTORY">

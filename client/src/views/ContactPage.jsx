@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { MapPin, Phone, Mail } from "lucide-react";
+import { MapPin, Phone, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { contactService } from "@/services";
+import { getErrorMessage } from "@/services/api";
 import PageShell from "@/components/PageShell";
 import PageHeading from "@/components/PageHeading";
 import FormField from "@/components/FormField";
@@ -10,11 +12,12 @@ const MIN_MESSAGE_LENGTH = 10;
 
 const ContactPage = () => {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [isSending, setIsSending] = useState(false);
   const { address, phone, email } = siteConfig.contact;
 
   const setField = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim()) {
       toast.error("Please enter your name and email");
@@ -24,10 +27,20 @@ const ContactPage = () => {
       toast.error("Please write a short message");
       return;
     }
-    const subject = encodeURIComponent(`Message from ${form.name.trim()}`);
-    const body = encodeURIComponent(`${form.message.trim()}\n\n${form.name.trim()}\n${form.email.trim()}`);
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-    toast.success("Opening your email app to send the message");
+    setIsSending(true);
+    try {
+      await contactService.send({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        message: form.message.trim(),
+      });
+      toast.success("Message sent. We will reply within one business day.");
+      setForm({ name: "", email: "", message: "" });
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const details = [
@@ -89,12 +102,14 @@ const ContactPage = () => {
           />
           <button
             type="submit"
-            className="w-full gradient-neon text-primary-foreground py-4 font-semibold uppercase tracking-wide rounded-full neon-glow"
+            disabled={isSending}
+            className="w-full inline-flex items-center justify-center gap-2 gradient-neon text-primary-foreground py-4 font-semibold uppercase tracking-wide rounded-full neon-glow disabled:opacity-60"
           >
-            Send Message
+            {isSending && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSending ? "Sending..." : "Send Message"}
           </button>
           <p className="text-xs text-center text-muted-foreground">
-            This opens your email app with the message ready to send to {email}.
+            We reply within one business day. You can also email {email} directly.
           </p>
         </form>
       </div>

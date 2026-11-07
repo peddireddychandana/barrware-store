@@ -43,13 +43,18 @@ exports.reviews = async (req, res) => {
     defaultLimit: 10,
     maxLimit: 50,
   });
+  const filter = {
+    product: product._id,
+    isApproved: true,
+    isHidden: false,
+  };
   const [data, total] = await Promise.all([
-    Review.find({ product: product._id })
+    Review.find(filter)
       .populate("user", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit),
-    Review.countDocuments({ product: product._id }),
+    Review.countDocuments(filter),
   ]);
   sendList(res, data, { page, limit, total });
 };

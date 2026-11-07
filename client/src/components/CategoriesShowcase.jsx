@@ -3,10 +3,10 @@ import Link from "@/components/AppLink";
 import { ArrowUpRight } from "lucide-react";
 import { useCategories } from "@/hooks/useCatalog";
 const FEATURED_SLUGS = [
-  { slug: "cocktail-shakers", className: "lg:col-span-2 lg:row-span-2 min-h-[380px] lg:min-h-0" },
-  { slug: "cocktail-strainers", className: "lg:col-span-2 min-h-[280px]" },
+  { slug: "shakers", className: "lg:col-span-2 lg:row-span-2 min-h-[380px] lg:min-h-0" },
+  { slug: "bar-tools", className: "lg:col-span-2 min-h-[280px]" },
   { slug: "glassware", className: "min-h-[280px]" },
-  { slug: "bartender-tool-sets", className: "min-h-[280px]" },
+  { slug: "drinkware", className: "min-h-[280px]" },
 ];
 
 const CategoriesShowcase = () => {
@@ -37,7 +37,7 @@ const CategoriesShowcase = () => {
               STOCK YOUR <span className="text-gradient">BAR</span>
             </h2>
             <p className="text-muted-foreground mt-4 max-w-md">
-              Eleven collections, one obsession. Pick your tools and start pouring.
+              Thirteen collections, one obsession. Pick your tools and start pouring.
             </p>
           </div>
           <Link
@@ -89,7 +89,7 @@ const CategoriesShowcase = () => {
                       <ArrowUpRight className="w-5 h-5" />
                     </motion.div>
                   </div>
-                  <span className="mt-4 text-[11px] uppercase tracking-widest text-foreground/70 inline-flex items-center gap-1">
+                  <span className="mt-4 text-[11px] uppercase tracking-widest text-primary/80 inline-flex items-center gap-1">
                     Shop {cat.name} <ArrowUpRight className="w-3 h-3" />
                   </span>
                 </div>
@@ -104,7 +104,7 @@ const CategoriesShowcase = () => {
               <Link
                 key={cat._id}
                 href={`/category/${cat.slug}`}
-                className="px-5 py-2 rounded-full border border-border bg-secondary text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                className="px-5 py-2 rounded-full border border-primary/30 bg-secondary text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
               >
                 {cat.name}
               </Link>

@@ -3,25 +3,39 @@ import Link from "@/components/AppLink";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { siteConfig } from "@/utils/siteConfig";
 
+const legalLinks = [
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Shipping Policy", href: "/shipping-policy" },
+  { label: "Returns & Refunds", href: "/refund-policy" },
+];
+
 const footerLinks = {
   shop: [
-    { label: "Cocktail Shakers", href: "/category/cocktail-shakers" },
-    { label: "Cocktail Strainers", href: "/category/cocktail-strainers" },
-    { label: "Muddlers", href: "/category/muddlers" },
-    { label: "Measuring Tools", href: "/category/measuring-tools" },
+    { label: "Shakers", href: "/category/shakers" },
+    { label: "Openers", href: "/category/openers" },
+    { label: "Bar Tools", href: "/category/bar-tools" },
+    { label: "Strainers", href: "/category/strainers" },
+    { label: "Measuring", href: "/category/measuring" },
+    { label: "Glassware", href: "/category/glassware" },
+    { label: "Drinkware", href: "/category/drinkware" },
     { label: "All Products", href: "/products" },
   ],
   collections: [
-    { label: "Wine Accessories", href: "/category/wine-accessories" },
-    { label: "Glassware", href: "/category/glassware" },
+    { label: "Pitchers & Beakers", href: "/category/pitchers-beakers" },
+    { label: "Spoons", href: "/category/spoons" },
+    { label: "Prep Tools", href: "/category/prep-tools" },
     { label: "Ice Accessories", href: "/category/ice-accessories" },
-    { label: "Bartender Tool Sets", href: "/category/bartender-tool-sets" },
+    { label: "Pourers", href: "/category/pourers" },
+    { label: "Garnish & Prep", href: "/category/garnish-prep" },
     { label: "Build Your Bar Kit", href: "/bar-kit" },
   ],
   account: [
     { label: "Our Story", href: "/about" },
     { label: "Contact Us", href: "/contact" },
     { label: "My Orders", href: "/orders" },
+    { label: "Track Order", href: "/track-order" },
+    { label: "My Wishlist", href: "/wishlist" },
     { label: "My Profile", href: "/profile" },
     { label: "Forgot Password", href: "/forgot-password" },
   ],
@@ -29,15 +43,14 @@ const footerLinks = {
 
 const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className="bg-background border-t border-border">
       <div className="container mx-auto px-4 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8">
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <motion.div whileHover={{ scale: 1.02 }}>
               <Link href="/" className="inline-block text-4xl font-display tracking-wider mb-6">
-                <span className="text-foreground">BAR</span>
-                <span className="text-primary">WARE</span>
+                <span className="text-primary">VYRNT</span>
               </Link>
             </motion.div>
             <p className="text-muted-foreground mb-6 max-w-sm">
@@ -69,7 +82,7 @@ const Footer = () => {
 
           {/* Shop Links */}
           <div>
-            <h4 className="font-display text-xl text-foreground mb-6">SHOP</h4>
+            <h4 className="font-display text-xl text-primary mb-6">SHOP</h4>
             <ul className="space-y-3">
               {footerLinks.shop.map((link) => (
                 <li key={link.label}>
@@ -86,7 +99,7 @@ const Footer = () => {
 
           {/* Help Links */}
           <div>
-            <h4 className="font-display text-xl text-foreground mb-6">COLLECTIONS</h4>
+            <h4 className="font-display text-xl text-primary mb-6">COLLECTIONS</h4>
             <ul className="space-y-3">
               {footerLinks.collections.map((link) => (
                 <li key={link.label}>
@@ -103,7 +116,7 @@ const Footer = () => {
 
           {/* Company Links */}
           <div>
-            <h4 className="font-display text-xl text-foreground mb-6">COMPANY</h4>
+            <h4 className="font-display text-xl text-primary mb-6">COMPANY</h4>
             <ul className="space-y-3">
               {footerLinks.account.map((link) => (
                 <li key={link.label}>
@@ -122,13 +135,26 @@ const Footer = () => {
         {/* Divider */}
         <div className="border-t border-border my-10" />
 
+        {/* Legal Links */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-6">
+          {legalLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
         {/* Bottom Row */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-sm text-muted-foreground text-center">
             © 2026 {siteConfig.name}. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
-            Cash on Delivery · Free shipping over ₹{siteConfig.freeShippingThreshold}
+            Cash on Delivery · UPI · Free shipping over ₹{siteConfig.freeShippingThreshold}
           </p>
         </div>
       </div>

@@ -110,10 +110,35 @@ const FLAG_TOGGLES = [
 const ProductForm = ({ product, onDone }) => {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(() => (product ? formFromProduct(product) : emptyProductForm()));
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: categoryService.list,
   });
+
+  const createCategory = useMutation({
+    mutationFn: (name) => categoryService.create({ name }),
+    onSuccess: (category) => {
+      toast.success("Category created");
+      queryClient.setQueryData(["categories"], (old = []) => [...old, category]);
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
+      setForm((prev) => ({ ...prev, category: category._id }));
+      setNewCategoryName("");
+      setShowNewCategory(false);
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
+  const handleCreateCategory = () => {
+    const name = newCategoryName.trim();
+    if (name.length < 2) {
+      toast.error("Category name must be at least 2 characters");
+      return;
+    }
+    createCategory.mutate(name);
+  };
 
   const setField = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
   const setValue = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
@@ -151,16 +176,57 @@ const ProductForm = ({ product, onDone }) => {
           <input value={form.name} onChange={setField("name")} className={inputClass} />
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Category">
-            <select value={form.category} onChange={setField("category")} className={inputClass}>
-              <option value="">Select category</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div>
+            <div className="flex items-end gap-2">
+              <Field label="Category" className="flex-1">
+                <select value={form.category} onChange={setField("category")} className={inputClass}>
+                  <option value="">Select category</option>
+                  {categories.map((category) => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <button
+                type="button"
+                onClick={() => setShowNewCategory((value) => !value)}
+                aria-expanded={showNewCategory}
+                className={`${ghostButtonClass} shrink-0 px-4`}
+              >
+                <Plus className="w-4 h-4" /> New
+              </button>
+            </div>
+            {showNewCategory && (
+              <div className="mt-3 flex gap-2">
+                <input
+                  autoFocus
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateCategory();
+                    }
+                  }}
+                  placeholder="New category name"
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateCategory}
+                  disabled={createCategory.isPending || newCategoryName.trim().length < 2}
+                  className={primaryButtonClass}
+                >
+                  {createCategory.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Create"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
           <Field label="Product type">
             <select
               value={form.productType}

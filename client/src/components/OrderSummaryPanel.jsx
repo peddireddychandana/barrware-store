@@ -11,15 +11,23 @@ const OrderSummaryPanel = ({ summary, title = "ORDER SUMMARY", children }) => (
         <dd>{formatPrice(summary.subtotal)}</dd>
       </div>
       {summary.discount > 0 && (
-        <div className="flex justify-between text-green-600">
+        <div className="flex justify-between text-primary">
           <dt>Discount</dt>
           <dd>-{formatPrice(summary.discount)}</dd>
         </div>
       )}
       {summary.kitDiscount > 0 && (
-        <div className="flex justify-between text-green-600">
+        <div className="flex justify-between text-primary">
           <dt>Kit discount (included above)</dt>
           <dd>-{formatPrice(summary.kitDiscount)}</dd>
+        </div>
+      )}
+      {summary.couponDiscount > 0 && (
+        <div className="flex justify-between text-primary">
+          <dt>
+            Coupon {summary.couponCode ? <span className="uppercase">({summary.couponCode})</span> : null}
+          </dt>
+          <dd>-{formatPrice(summary.couponDiscount)}</dd>
         </div>
       )}
       <div className="flex justify-between">
@@ -30,6 +38,11 @@ const OrderSummaryPanel = ({ summary, title = "ORDER SUMMARY", children }) => (
         <dt>Total</dt>
         <dd>{formatPrice(summary.total)}</dd>
       </div>
+      {summary.tax > 0 && (
+        <p className="text-[11px] text-muted-foreground text-right">
+          Includes GST {formatPrice(summary.tax)}
+        </p>
+      )}
     </dl>
   </div>
 );

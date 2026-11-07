@@ -67,7 +67,7 @@ const CategoryForm = ({ category, onDone }) => {
           value={form.name}
           onChange={setField("name")}
           className={inputClass}
-          placeholder="Cocktail Shakers"
+          placeholder="e.g. Shakers"
         />
       </Field>
       <Field label="Description">

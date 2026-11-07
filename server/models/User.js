@@ -27,10 +27,32 @@ const userSchema = new mongoose.Schema(
     },
     phone: { type: String, trim: true, default: "" },
     address: {
+      fullName: { type: String, trim: true, default: "" },
+      phone: { type: String, trim: true, default: "" },
       line1: { type: String, trim: true, default: "" },
+      line2: { type: String, trim: true, default: "" },
       city: { type: String, trim: true, default: "" },
       state: { type: String, trim: true, default: "" },
       pincode: { type: String, trim: true, default: "" },
+    },
+    addresses: {
+      type: [
+        new mongoose.Schema(
+          {
+            label: { type: String, trim: true, default: "Home", maxlength: 40 },
+            fullName: { type: String, trim: true, required: true },
+            phone: { type: String, trim: true, required: true },
+            line1: { type: String, trim: true, required: true },
+            line2: { type: String, trim: true, default: "" },
+            city: { type: String, trim: true, required: true },
+            state: { type: String, trim: true, required: true },
+            pincode: { type: String, trim: true, required: true },
+            isDefault: { type: Boolean, default: false },
+          },
+          { _id: true },
+        ),
+      ],
+      default: [],
     },
     resetPasswordToken: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },

@@ -4,12 +4,17 @@ import { useAuth } from "@/context/AuthContext";
 import { cartService } from "@/services";
 import { getErrorMessage } from "@/services/api";
 import { normalizeProduct } from "@/utils/format";
+import { trackEvent } from "@/lib/analytics";
 
 const GUEST_CART_KEY = "barware-guest-cart";
+const GUEST_COUPON_KEY = "barware-guest-coupon";
 const EMPTY_SUMMARY = {
   subtotal: 0,
   discount: 0,
   kitDiscount: 0,
+  couponCode: "",
+  couponDiscount: 0,
+  tax: 0,
   shipping: 0,
   total: 0,
   itemCount: 0,
@@ -33,6 +38,23 @@ const writeGuestCart = (lines) => {
   }
 };
 
+const readGuestCoupon = () => {
+  try {
+    return localStorage.getItem(GUEST_COUPON_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+
+const writeGuestCoupon = (code) => {
+  try {
+    if (code) localStorage.setItem(GUEST_COUPON_KEY, code);
+    else localStorage.removeItem(GUEST_COUPON_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+};
+
 const toCartItems = (items = []) =>
   items.map(({ product, quantity, kitId }) => ({
     ...normalizeProduct(product),
@@ -44,22 +66,36 @@ export const CartProvider = ({ children }) => {
   const { isLoggedIn, isLoading: isAuthLoading } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
+  const [coupon, setCoupon] = useState(null);
   const wasLoggedIn = useRef(false);
 
   const applyCart = useCallback((cart) => {
     setCartItems(toCartItems(cart.items));
     setSummary(cart.summary ?? EMPTY_SUMMARY);
+    setCoupon(cart.coupon ?? (cart.summary?.couponCode ? { code: cart.summary.couponCode } : null));
   }, []);
 
   const refreshGuestCart = useCallback(async () => {
     const lines = readGuestCart();
     if (lines.length === 0) {
+      writeGuestCoupon("");
       applyCart({ items: [], summary: EMPTY_SUMMARY });
       return;
     }
+    const code = readGuestCoupon();
     try {
-      applyCart(await cartService.quote(lines));
+      applyCart(await cartService.quote(lines, code));
     } catch {
+      if (code) {
+        // Coupon became invalid for this cart; drop it and retry.
+        writeGuestCoupon("");
+        try {
+          applyCart(await cartService.quote(lines));
+          return;
+        } catch {
+          /* fall through */
+        }
+      }
       applyCart({ items: [], summary: EMPTY_SUMMARY });
     }
   }, [applyCart]);
@@ -119,6 +155,18 @@ export const CartProvider = ({ children }) => {
             : [...lines, { productId, quantity }],
         );
       }
+      trackEvent("add_to_cart", {
+        currency: "INR",
+        value: Number(product.price || 0) * quantity,
+        items: [
+          {
+            item_id: productId,
+            item_name: product.name,
+            price: Number(product.price || 0),
+            quantity,
+          },
+        ],
+      });
       return true;
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -149,9 +197,53 @@ export const CartProvider = ({ children }) => {
       await cartService.clear().catch(() => {});
     } else {
       writeGuestCart([]);
+      writeGuestCoupon("");
     }
     applyCart({ items: [], summary: EMPTY_SUMMARY });
   };
+
+  const applyCoupon = async (code) => {
+    const normalized = String(code || "").trim().toUpperCase();
+    if (!normalized) return false;
+    try {
+      if (isLoggedIn) {
+        applyCart(await cartService.applyCoupon(normalized));
+      } else {
+        writeGuestCoupon(normalized);
+        applyCart(await cartService.quote(readGuestCart(), normalized));
+      }
+      toast.success("Coupon applied");
+      return true;
+    } catch (error) {
+      if (!isLoggedIn) writeGuestCoupon("");
+      toast.error(getErrorMessage(error));
+      return false;
+    }
+  };
+
+  const removeCoupon = async () => {
+    try {
+      if (isLoggedIn) {
+        applyCart(await cartService.removeCoupon());
+      } else {
+        writeGuestCoupon("");
+        applyCart(
+          readGuestCart().length
+            ? await cartService.quote(readGuestCart())
+            : { items: [], summary: EMPTY_SUMMARY },
+        );
+      }
+      toast.success("Coupon removed");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const checkoutItems = cartItems.map((item) => ({
+    productId: item.id ?? item._id,
+    quantity: item.quantity,
+    ...(item.kitId ? { kitId: item.kitId } : {}),
+  }));
 
   const addKit = async (kitItems) => {
     applyCart(await cartService.addKit(kitItems));
@@ -162,11 +254,16 @@ export const CartProvider = ({ children }) => {
       value={{
         cartItems,
         summary,
+        coupon,
+        couponCode: summary.couponCode || coupon?.code || "",
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
         addKit,
+        applyCoupon,
+        removeCoupon,
+        checkoutItems,
         refreshCart,
         cartTotal: summary.total,
         cartCount: summary.itemCount || cartItems.reduce((count, item) => count + item.quantity, 0),

@@ -5,12 +5,12 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { useProducts } from "@/hooks/useCatalog";
 
 const OVERLAY_COLORS = [
-  "from-orange-600/20",
-  "from-cyan-600/20",
-  "from-pink-600/20",
-  "from-green-600/20",
-  "from-yellow-600/20",
-  "from-purple-600/20",
+  "from-primary/20",
+  "from-accent/25",
+  "from-destructive/25",
+  "from-steel/15",
+  "from-gold/10",
+  "from-bronze/15",
 ];
 
 const TrendingCarousel = () => {
@@ -149,7 +149,7 @@ const TrendingCarousel = () => {
                   >
                     {collection.material}
                   </motion.span>
-                  <h3 className="text-2xl font-display text-foreground mt-1 mb-4">
+                  <h3 className="text-2xl font-display text-primary mt-1 mb-4">
                     {collection.name}
                   </h3>
                   <div className="flex items-center gap-2 text-primary font-medium opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">

@@ -5,7 +5,13 @@ const Product = require("../models/Product");
 /** Recomputes a product's rating (1 decimal) and numReviews from its reviews. */
 async function recalculateProductRating(productId) {
   const [agg] = await Review.aggregate([
-    { $match: { product: new mongoose.Types.ObjectId(String(productId)) } },
+    {
+      $match: {
+        product: new mongoose.Types.ObjectId(String(productId)),
+        isApproved: true,
+        isHidden: false,
+      },
+    },
     {
       $group: { _id: "$product", avg: { $avg: "$rating" }, count: { $sum: 1 } },
     },

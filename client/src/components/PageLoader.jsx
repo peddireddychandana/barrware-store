@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Martini } from "lucide-react";
 
 const WORDS = ["SHAKE", "STIR", "STRAIN", "SERVE"];
 const LOADER_DURATION = 3600;
@@ -58,7 +59,7 @@ const PageLoader = () => {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(600px circle at 50% 50%, oklch(0.65 0.22 45 / 0.18), transparent 60%)",
+                "radial-gradient(600px circle at 50% 50%, rgba(217, 165, 46, 0.16), transparent 60%)",
             }}
             animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -70,28 +71,23 @@ const PageLoader = () => {
             className="absolute inset-0 opacity-[0.06]"
             style={{
               backgroundImage:
-                "linear-gradient(oklch(0.65 0.22 45) 1px, transparent 1px), linear-gradient(90deg, oklch(0.65 0.22 45) 1px, transparent 1px)",
+                "linear-gradient(rgba(217, 165, 46, 0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(217, 165, 46, 0.9) 1px, transparent 1px)",
               backgroundSize: "60px 60px",
               maskImage: "radial-gradient(circle at center, black 40%, transparent 75%)",
             }}
           />
 
-          {/* orbital ring */}
+          {/* bar glass */}
           <motion.div
             aria-hidden
-            className="absolute w-[520px] h-[520px] rounded-full border border-primary/20"
+            className="absolute flex items-center justify-center"
             animate={{ rotate: 360 }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
           >
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary neon-glow" />
-          </motion.div>
-          <motion.div
-            aria-hidden
-            className="absolute w-[360px] h-[360px] rounded-full border border-primary/10"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
-          >
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary/80" />
+            <Martini
+              className="w-[420px] h-[420px] md:w-[560px] md:h-[560px] text-primary/15"
+              strokeWidth={0.8}
+            />
           </motion.div>
 
           {/* content */}
@@ -103,8 +99,8 @@ const PageLoader = () => {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="relative mb-8"
             >
-              <div className="w-20 h-20 rounded-2xl border border-primary/40 flex items-center justify-center backdrop-blur-sm bg-background/40">
-                <span className="font-display text-3xl text-gradient tracking-tight">B</span>
+              <div className="w-20 h-20 rounded-2xl border border-primary/40 flex items-center justify-center backdrop-blur-sm bg-background/40 overflow-hidden">
+                <img src="/logo.png" alt="Vyrnt logo" className="w-full h-full object-cover" />
               </div>
               <motion.div
                 className="absolute inset-0 rounded-2xl border border-primary"
@@ -119,9 +115,9 @@ const PageLoader = () => {
                 initial={{ y: "110%" }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-                className="font-display text-5xl md:text-7xl tracking-[0.15em] text-foreground"
+                className="font-display text-5xl md:text-7xl tracking-[0.15em] text-primary"
               >
-                BAR <span className="text-gradient">WARE</span>
+                <span className="text-gradient">VYRNT</span>
               </motion.h1>
             </div>
 
@@ -148,8 +144,8 @@ const PageLoader = () => {
                   className="absolute inset-y-0 left-0 rounded-full"
                   style={{
                     width: `${progress}%`,
-                    background: "linear-gradient(90deg, oklch(0.65 0.22 45), oklch(0.78 0.18 55))",
-                    boxShadow: "0 0 12px oklch(0.65 0.22 45 / 0.8)",
+                    background: "linear-gradient(90deg, #d9a52e, #b87927)",
+                    boxShadow: "0 0 12px rgba(217, 165, 46, 0.55)",
                   }}
                 />
                 {/* shimmer */}
@@ -157,7 +153,7 @@ const PageLoader = () => {
                   className="absolute inset-y-0 w-24 -translate-x-full"
                   style={{
                     background:
-                      "linear-gradient(90deg, transparent, oklch(1 0 0 / 0.35), transparent)",
+                      "linear-gradient(90deg, transparent, rgba(242, 209, 138, 0.35), transparent)",
                   }}
                   animate={{ x: ["-100%", "500%"] }}
                   transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}

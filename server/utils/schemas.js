@@ -58,18 +58,27 @@ const quantity = z.coerce
 const keyValueList = z.array(
   z.object({ key: z.string().trim().min(1), value: z.string().trim().min(1) }),
 );
+const faqList = z.array(
+  z.object({
+    question: z.string().trim().min(1).max(200),
+    answer: z.string().trim().min(1).max(1200),
+  }),
+);
+const slug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9-]*$/, "Slug can only contain letters, numbers and hyphens");
 
 const productFields = {
   name: z.string().trim().min(2).max(140),
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(/^[a-z0-9-]+$/)
-    .optional(),
+  slug: slug.optional(),
   sku: z.string().trim().min(3).max(40).optional(),
   shortDescription: z.string().trim().max(300).optional(),
   description: z.string().trim().max(4000).optional(),
+  metaTitle: z.string().trim().max(65).optional(),
+  metaDescription: z.string().trim().max(160).optional(),
+  imageAltText: z.string().trim().max(200).optional(),
   price: z.coerce.number().min(0),
   originalPrice: z.coerce.number().min(0).optional(),
   category: z.string().trim().min(1),
@@ -82,6 +91,7 @@ const productFields = {
   specifications: keyValueList.optional(),
   features: z.array(z.string().trim().min(1)).optional(),
   highlights: keyValueList.max(3).optional(),
+  faqs: faqList.max(12).optional(),
   images: z.array(z.string().trim().min(1)).optional(),
   stock: z.coerce.number().int().min(0),
   featured: z.boolean().optional(),
@@ -123,7 +133,12 @@ module.exports = {
   cartUpdate: z.object({ quantity: z.coerce.number().int().min(0).max(50) }),
   cartQuote: z.object({
     items: z.array(z.object({ productId: objectId, quantity })).max(100),
+    couponCode: z.string().trim().max(40).optional().default(""),
   }),
+  couponApply: z.object({
+    code: z.string().trim().min(2, "Enter a coupon code").max(40),
+  }),
+  trackOrder: z.object({ orderNumber: z.string().trim().min(4), email }),
   kitItems: z.object({
     items: z
       .array(z.object({ slot: z.string().min(1), productId: objectId }))
@@ -133,8 +148,31 @@ module.exports = {
   createOrder: z.object({
     shippingAddress,
     paymentMethod: z
-      .literal("COD", { error: "Only Cash on Delivery is supported" })
+      .enum(["COD", "UPI"], { error: "Choose Cash on Delivery or UPI" })
       .default("COD"),
+    couponCode: z.string().trim().max(40).optional().default(""),
+    /** Guest checkout only; members order from their server-side cart. */
+    items: z
+      .array(
+        z.object({
+          productId: objectId,
+          quantity,
+          kitId: z.string().trim().max(80).optional(),
+        }),
+      )
+      .max(100)
+      .optional(),
+  }),
+  submitPayment: z.object({
+    reference: z
+      .string()
+      .trim()
+      .min(6, "Enter the UPI transaction / UTR ID")
+      .max(80, "Transaction ID is too long"),
+  }),
+  paymentStatus: z.object({
+    status: z.enum(["paid", "failed"], { error: "Choose paid or failed" }),
+    note: z.string().trim().max(300).optional(),
   }),
   orderStatus: z.object({
     status: z.enum([
@@ -146,6 +184,102 @@ module.exports = {
       "cancelled",
     ]),
     note: z.string().trim().max(300).optional(),
+    tracking: z
+      .object({
+        carrier: z.string().trim().max(80).optional(),
+        number: z.string().trim().max(120).optional(),
+        url: z.string().trim().max(500).optional(),
+      })
+      .optional(),
+  }),
+  orderTracking: z.object({
+    carrier: z.string().trim().max(80).optional().default(""),
+    number: z.string().trim().max(120).optional().default(""),
+    url: z.string().trim().max(500).optional().default(""),
+  }),
+  returnCreate: z.object({
+    reason: z.string().trim().min(3, "Tell us why you are returning this").max(500),
+    items: z
+      .array(
+        z.object({
+          productId: objectId,
+          quantity: z.coerce.number().int().min(1).max(50),
+        }),
+      )
+      .min(1, "Select at least one item")
+      .max(100),
+  }),
+  returnStatus: z.object({
+    status: z.enum(["approved", "rejected", "received", "refunded"]),
+    note: z.string().trim().max(300).optional(),
+    refundAmount: z.coerce.number().min(0).optional(),
+  }),
+  couponPayload: z.object({
+    code: z
+      .string()
+      .trim()
+      .min(2)
+      .max(40)
+      .regex(/^[A-Za-z0-9_-]+$/, "Use letters, numbers, hyphens or underscores"),
+    description: z.string().trim().max(200).optional().default(""),
+    type: z.enum(["percent", "fixed"]).default("percent"),
+    value: z.coerce.number().min(0),
+    minSubtotal: z.coerce.number().min(0).optional().default(0),
+    maxDiscount: z.coerce.number().min(0).optional().default(0),
+    usageLimit: z.coerce.number().int().min(0).optional().default(0),
+    perUserLimit: z.coerce.number().int().min(0).optional().default(0),
+    startsAt: z.coerce.date().optional(),
+    expiresAt: z.coerce.date().optional(),
+    isActive: z.boolean().optional(),
+  }),
+  couponUpdate: z
+    .object({
+      code: z
+        .string()
+        .trim()
+        .min(2)
+        .max(40)
+        .regex(
+          /^[A-Za-z0-9_-]+$/,
+          "Use letters, numbers, hyphens or underscores",
+        ),
+      description: z.string().trim().max(200),
+      type: z.enum(["percent", "fixed"]),
+      value: z.coerce.number().min(0),
+      minSubtotal: z.coerce.number().min(0),
+      maxDiscount: z.coerce.number().min(0),
+      usageLimit: z.coerce.number().int().min(0),
+      perUserLimit: z.coerce.number().int().min(0),
+      startsAt: z.coerce.date(),
+      expiresAt: z.coerce.date(),
+      isActive: z.boolean(),
+    })
+    .partial(),
+  inquiryCreate: z.object({
+    name: z.string().trim().min(2, "Your name is required").max(100),
+    email,
+    phone: phone.or(z.literal("")).optional().default(""),
+    subject: z.string().trim().max(140).optional().default(""),
+    message: z.string().trim().min(5, "Please add a message").max(2000),
+  }),
+  inquiryStatus: z.object({
+    status: z.enum(["new", "read", "resolved"]),
+  }),
+  wishlistToggle: z.object({ productId: objectId }),
+  addressPayload: z.object({
+    label: z.string().trim().max(40).optional().default("Home"),
+    fullName: z.string().trim().min(2).max(100),
+    phone,
+    line1: z.string().trim().min(3).max(160),
+    line2: z.string().trim().max(160).optional().default(""),
+    city: z.string().trim().min(2).max(80),
+    state: z.string().trim().min(2).max(80),
+    pincode: z.string().trim().regex(/^\d{6}$/, "Pincode must be 6 digits"),
+    isDefault: z.boolean().optional().default(false),
+  }),
+  reviewModerate: z.object({
+    isApproved: z.boolean().optional(),
+    isHidden: z.boolean().optional(),
   }),
   createReview: z.object({
     productId: objectId,
@@ -158,24 +292,25 @@ module.exports = {
   productUpdate: z.object(productFields).partial(),
   categoryCreate: z.object({
     name: z.string().trim().min(2).max(80),
-    slug: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .regex(/^[a-z0-9-]+$/)
-      .optional(),
+    slug: slug.optional(),
     description: z.string().trim().max(600).optional(),
+    metaTitle: z.string().trim().max(65).optional(),
+    metaDescription: z.string().trim().max(160).optional(),
+    imageAltText: z.string().trim().max(200).optional(),
+    seoContent: z.string().trim().max(5000).optional(),
+    faqs: faqList.max(12).optional(),
     image: z.string().trim().optional(),
   }),
   categoryUpdate: z
     .object({
       name: z.string().trim().min(2).max(80),
-      slug: z
-        .string()
-        .trim()
-        .toLowerCase()
-        .regex(/^[a-z0-9-]+$/),
+      slug,
       description: z.string().trim().max(600),
+      metaTitle: z.string().trim().max(65),
+      metaDescription: z.string().trim().max(160),
+      imageAltText: z.string().trim().max(200),
+      seoContent: z.string().trim().max(5000),
+      faqs: faqList.max(12),
       image: z.string().trim(),
     })
     .partial(),

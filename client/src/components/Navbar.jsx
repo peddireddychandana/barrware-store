@@ -11,9 +11,11 @@ import {
   Search,
   Package,
   LayoutDashboard,
+  Heart,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useWishlist } from "@/context/WishlistContext";
 import CartDrawer from "./CartDrawer";
 
 const navItems = [
@@ -22,17 +24,19 @@ const navItems = [
     label: "Shop",
     href: "/products",
     submenu: [
-      { label: "Cocktail Shakers", href: "/category/cocktail-shakers" },
-      { label: "Cocktail Strainers", href: "/category/cocktail-strainers" },
-      { label: "Muddlers", href: "/category/muddlers" },
-      { label: "Measuring Tools", href: "/category/measuring-tools" },
-      { label: "Wine Accessories", href: "/category/wine-accessories" },
+      { label: "Shakers", href: "/category/shakers" },
+      { label: "Openers", href: "/category/openers" },
+      { label: "Bar Tools", href: "/category/bar-tools" },
+      { label: "Strainers", href: "/category/strainers" },
+      { label: "Measuring", href: "/category/measuring" },
       { label: "Glassware", href: "/category/glassware" },
-      { label: "Bar Spoons", href: "/category/bar-spoons" },
+      { label: "Pitchers & Beakers", href: "/category/pitchers-beakers" },
+      { label: "Spoons", href: "/category/spoons" },
+      { label: "Prep Tools", href: "/category/prep-tools" },
       { label: "Ice Accessories", href: "/category/ice-accessories" },
-      { label: "Bottle Pourers", href: "/category/bottle-pourers" },
-      { label: "Cocktail Mixing Glasses", href: "/category/cocktail-mixing-glasses" },
-      { label: "Bartender Tool Sets", href: "/category/bartender-tool-sets" },
+      { label: "Pourers", href: "/category/pourers" },
+      { label: "Garnish & Prep", href: "/category/garnish-prep" },
+      { label: "Drinkware", href: "/category/drinkware" },
       { label: "Build Your Bar Kit", href: "/bar-kit" },
     ],
   },
@@ -48,6 +52,7 @@ const Navbar = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const { cartCount } = useCart();
+  const { count: wishlistCount } = useWishlist();
   const { user, isLoggedIn, isAdmin, logout, openLoginModal } = useAuth();
 
   useEffect(() => {
@@ -64,8 +69,10 @@ const Navbar = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          isScrolled ? "bg-background/95 backdrop-blur-lg border-b border-border" : "bg-transparent"
+        className={`fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-lg transition-all duration-500 ${
+          isScrolled
+            ? "bg-background/95 border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.65)]"
+            : "bg-background/80 border-border/70"
         }`}
       >
         <div className="container mx-auto px-4 lg:px-8">
@@ -73,12 +80,18 @@ const Navbar = () => {
             {/* Logo */}
             <Link href="/">
               <motion.div
-                className="text-3xl md:text-4xl font-display tracking-wider"
+                className="flex items-center gap-3"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span className="text-foreground">BAR</span>
-                <span className="text-primary">WARE</span>
+                <img
+                  src="/logo.png"
+                  alt="Vyrnt logo"
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border border-primary/50"
+                />
+                <span className="text-3xl md:text-4xl font-display font-bold uppercase tracking-wide text-primary">
+                  VYRNT
+                </span>
               </motion.div>
             </Link>
 
@@ -120,7 +133,7 @@ const Navbar = () => {
                             <Link
                               key={subItem.href}
                               href={subItem.href}
-                              className="block py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-md transition-colors"
+                              className="block py-2 px-3 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 rounded-md transition-colors"
                             >
                               {subItem.label}
                             </Link>
@@ -140,7 +153,7 @@ const Navbar = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => window.dispatchEvent(new Event("barware:open-search"))}
-                className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-secondary/50 hover:border-primary transition-colors text-muted-foreground hover:text-foreground"
+                className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full border border-primary/40 bg-secondary/50 hover:border-primary transition-colors text-steel hover:text-primary"
               >
                 <Search className="w-4 h-4" />
                 <span className="text-xs">Search</span>
@@ -152,17 +165,33 @@ const Navbar = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => window.dispatchEvent(new Event("barware:open-search"))}
-                className="md:hidden p-2 text-foreground/80 hover:text-foreground transition-colors"
+                className="md:hidden p-2 text-steel hover:text-primary transition-colors"
               >
                 <Search className="w-5 h-5" />
               </motion.button>
+
+              {/* Wishlist */}
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Link
+                  href="/wishlist"
+                  aria-label="Wishlist"
+                  className="relative p-2 text-steel hover:text-primary transition-colors inline-flex"
+                >
+                  <Heart className="w-5 h-5" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-semibold">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Link>
+              </motion.div>
 
               {/* Cart Button */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsCartOpen(true)}
-                className="relative p-2 text-foreground/80 hover:text-foreground transition-colors"
+                className="relative p-2 text-steel hover:text-primary transition-colors"
               >
                 <ShoppingBag className="w-5 h-5" />
                 {cartCount > 0 && (
@@ -186,7 +215,7 @@ const Navbar = () => {
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
-                    className="p-2 text-foreground/80 hover:text-foreground transition-colors flex items-center gap-2"
+                    className="p-2 text-steel hover:text-primary transition-colors flex items-center gap-2"
                   >
                     <div className="w-8 h-8 rounded-full gradient-neon flex items-center justify-center">
                       <span className="text-primary-foreground text-sm font-semibold">
@@ -209,22 +238,36 @@ const Navbar = () => {
                           </p>
                           <Link
                             href="/profile"
-                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-md transition-colors"
+                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 rounded-md transition-colors"
                           >
                             <User className="w-4 h-4" />
                             My Profile
                           </Link>
                           <Link
                             href="/orders"
-                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-md transition-colors"
+                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 rounded-md transition-colors"
                           >
                             <Package className="w-4 h-4" />
                             My Orders
                           </Link>
+                          <Link
+                            href="/wishlist"
+                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 rounded-md transition-colors"
+                          >
+                            <Heart className="w-4 h-4" />
+                            My Wishlist
+                          </Link>
+                          <Link
+                            href="/track-order"
+                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 rounded-md transition-colors"
+                          >
+                            <Package className="w-4 h-4" />
+                            Track an order
+                          </Link>
                           {isAdmin && (
                             <Link
                               href="/admin"
-                              className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-md transition-colors"
+                              className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 rounded-md transition-colors"
                             >
                               <LayoutDashboard className="w-4 h-4" />
                               Admin Dashboard
@@ -232,7 +275,7 @@ const Navbar = () => {
                           )}
                           <button
                             onClick={logout}
-                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-md transition-colors"
+                            className="w-full flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 rounded-md transition-colors"
                           >
                             <LogOut className="w-4 h-4" />
                             Sign Out
@@ -258,7 +301,7 @@ const Navbar = () => {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="lg:hidden p-2 text-foreground"
+                className="lg:hidden p-2 text-primary"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
                 {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -294,6 +337,20 @@ const Navbar = () => {
                     </Link>
                   </motion.div>
                 ))}
+                <Link
+                  href="/wishlist"
+                  className="block py-3 text-lg font-medium uppercase tracking-wide text-foreground/80 hover:text-primary transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Wishlist
+                </Link>
+                <Link
+                  href="/track-order"
+                  className="block py-3 text-lg font-medium uppercase tracking-wide text-foreground/80 hover:text-primary transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Track Order
+                </Link>
 
                 {/* Mobile Login Button */}
                 {!isLoggedIn && (

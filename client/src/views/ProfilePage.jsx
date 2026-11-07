@@ -8,6 +8,7 @@ import PageShell from "@/components/PageShell";
 import PageHeading from "@/components/PageHeading";
 import RequireLogin from "@/components/RequireLogin";
 import FormField from "@/components/FormField";
+import AddressBook from "@/components/AddressBook";
 
 const PIN_PATTERN = /^\d{6}$/;
 
@@ -137,6 +138,7 @@ const ProfilePage = () => (
     />
     <RequireLogin message="Please sign in to manage your profile.">
       <ProfileForm />
+      <AddressBook />
     </RequireLogin>
   </PageShell>
 );

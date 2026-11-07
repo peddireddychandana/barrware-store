@@ -13,6 +13,11 @@ const ADMIN_LINKS = [
   { label: "Categories", href: "/admin/categories" },
   { label: "Orders", href: "/admin/orders" },
   { label: "Customers", href: "/admin/customers" },
+  { label: "Coupons", href: "/admin/coupons" },
+  { label: "Returns", href: "/admin/returns" },
+  { label: "Inquiries", href: "/admin/inquiries" },
+  { label: "Reviews", href: "/admin/reviews" },
+  { label: "Reports", href: "/admin/reports" },
 ];
 
 const isActiveLink = (pathname, href) =>
@@ -29,7 +34,7 @@ const AdminNav = () => {
           className={`shrink-0 px-6 py-2 rounded-full font-medium uppercase tracking-wide text-sm transition-all duration-300 ${
             isActiveLink(pathname, href)
               ? "gradient-neon text-primary-foreground neon-glow"
-              : "bg-secondary text-muted-foreground hover:text-foreground"
+              : "bg-secondary text-muted-foreground hover:text-primary"
           }`}
         >
           {label}

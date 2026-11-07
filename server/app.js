@@ -6,8 +6,10 @@ const rateLimit = require("express-rate-limit");
 const morgan = require("morgan");
 const env = require("./config/env");
 const sanitize = require("./middleware/sanitize");
+const csrfGuard = require("./middleware/csrf");
 const { notFound, errorHandler } = require("./middleware/error");
 const { apiRoutes, authRoutes } = require("./routes");
+const sitemapRoutes = require("./routes/sitemap");
 const { UPLOAD_DIR } = require("./services/uploadService");
 
 /** Builds the Express app (no listening), so tests can mount it with supertest. */
@@ -33,6 +35,7 @@ function createApp() {
   if (env.nodeEnv === "development") app.use(morgan("dev"));
   app.use(express.json({ limit: "100kb" }));
   app.use(cookieParser());
+  app.use(csrfGuard);
   app.use(sanitize);
 
   app.use(
@@ -43,6 +46,7 @@ function createApp() {
   const isSessionCheck = (req) => req.method === "GET" && req.path === "/me";
   app.use("/api/auth", limiter(15 * 60 * 1000, 30, isSessionCheck), authRoutes);
   app.use("/api", apiRoutes);
+  app.use("/sitemap.xml", sitemapRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
