@@ -134,23 +134,33 @@ const SEOHead = ({
   let pageFaqs = faqs;
 
   if (product) {
-    pageTitle = product.metaTitle || `${product.name} | ${SITE_NAME}`;
+    pageTitle =
+      product.seo?.metaTitle ||
+      product.metaTitle ||
+      `${product.name} | ${SITE_NAME}`;
     pageDescription =
+      product.seo?.metaDescription ||
       product.metaDescription ||
       product.shortDescription ||
       product.description;
-    canonicalPath = path || `/products/${product.slug}`;
+    canonicalPath =
+      path || `/products/${product.seo?.slug || product.slug}`;
     pageImage = image || product.images?.[0];
     pageFaqs = faqs ?? product.faqs;
   }
 
   if (category) {
-    pageTitle = category.metaTitle || `${category.name} | ${SITE_NAME}`;
+    pageTitle =
+      category.seo?.metaTitle ||
+      category.metaTitle ||
+      `${category.name} | ${SITE_NAME}`;
     pageDescription =
+      category.seo?.metaDescription ||
       category.metaDescription ||
       category.description ||
       siteConfig.description;
-    canonicalPath = path || `/category/${category.slug}`;
+    canonicalPath =
+      path || `/category/${category.seo?.slug || category.slug}`;
     pageImage = image || category.image;
     pageFaqs = faqs ?? category.faqs;
   }

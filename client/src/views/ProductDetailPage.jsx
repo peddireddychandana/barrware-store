@@ -9,6 +9,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useProduct } from "@/hooks/useCatalog";
 import { formatPrice } from "@/utils/format";
 import PageShell from "@/components/PageShell";
+import SEOHead from "@/components/SEOHead";
 import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import RatingStars from "@/components/RatingStars";
@@ -218,6 +219,19 @@ const ProductDetailPage = () => {
 
   return (
     <PageShell>
+      <SEOHead
+        product={product}
+        breadcrumbs={[
+          { name: "Home", path: "/" },
+          {
+            name: product.category ?? "Products",
+            path: product.categorySlug
+              ? `/category/${product.categorySlug}`
+              : "/products",
+          },
+          { name: product.name, path: `/products/${product.slug}` },
+        ]}
+      />
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-8">
         <Link
           href={product.categorySlug ? `/category/${product.categorySlug}` : "/products"}
