@@ -12,6 +12,7 @@ const {
 } = require("../config/store");
 const { computeSummary } = require("./pricing");
 const couponService = require("./couponService");
+const cartService = require("./cartService");
 const {
   notifyOrderPlaced,
   notifyOrderStatus,
@@ -35,35 +36,57 @@ function generateOrderNumber() {
   return `BW-${date}-${suffix}`;
 }
 
-/** Conditionally decrements stock for each product; undoes partial work and throws if any is short. */
-async function reserveStock(quantities) {
+/** Conditionally decrements stock for each line; undoes partial work and throws if any is short. */
+async function reserveStock(entries) {
   const done = [];
-  for (const [productId, qty] of quantities) {
-    const res = await Product.updateOne(
-      { _id: productId, isActive: true, stock: { $gte: qty } },
-      { $inc: { stock: -qty, sold: qty } },
-    );
+  for (const entry of entries) {
+    const { productId, variantId, qty } = entry;
+    const filter = variantId
+      ? {
+          _id: productId,
+          isActive: true,
+          "variants._id": variantId,
+          "variants.stock": { $gte: qty },
+        }
+      : { _id: productId, isActive: true, stock: { $gte: qty } };
+    const update = variantId
+      ? { $inc: { "variants.$.stock": -qty, sold: qty } }
+      : { $inc: { stock: -qty, sold: qty } };
+    const res = await Product.updateOne(filter, update);
     if (res.modifiedCount !== 1) {
       await releaseStock(done);
       const p = await Product.findById(productId);
+      const variant = variantId
+        ? p?.variants?.id(variantId)
+        : null;
+      const label = variant
+        ? `${p.name} (${variant.variantName || variant.colorName || "variant"})`
+        : p?.name;
       throw new AppError(
-        p
-          ? `Only ${p.stock} unit(s) of ${p.name} available`
-          : "A product in your cart is no longer available",
+        variant
+          ? `Only ${variant.stock} unit(s) of ${label} available`
+          : p
+            ? `Only ${p.stock} unit(s) of ${p.name} available`
+            : "A product in your cart is no longer available",
         400,
       );
     }
-    done.push([productId, qty]);
+    done.push(entry);
   }
 }
 
 const releaseStock = (entries) =>
   Promise.all(
-    [...entries].map(([productId, qty]) =>
-      Product.updateOne(
-        { _id: productId },
-        { $inc: { stock: qty, sold: -qty } },
-      ),
+    entries.map(({ productId, variantId, qty }) =>
+      variantId
+        ? Product.updateOne(
+            { _id: productId, "variants._id": variantId },
+            { $inc: { "variants.$.stock": qty, sold: -qty } },
+          )
+        : Product.updateOne(
+            { _id: productId },
+            { $inc: { stock: qty, sold: -qty } },
+          ),
     ),
   );
 
@@ -78,17 +101,19 @@ async function resolveLines(user, guestItems) {
       productId: i.product,
       quantity: i.quantity,
       kitId: i.kitId,
+      variantId: i.variantId,
     }));
   } else {
     if (!Array.isArray(guestItems) || guestItems.length === 0)
       throw new AppError("Your cart is empty", 400);
     const totals = new Map();
     for (const item of guestItems) {
-      const key = String(item.productId);
+      const key = `${item.productId}:${item.variantId || ""}`;
       const current = totals.get(key) || {
         productId: item.productId,
         quantity: 0,
         kitId: item.kitId,
+        variantId: item.variantId,
       };
       current.quantity += item.quantity;
       if (item.kitId) current.kitId = item.kitId;
@@ -108,7 +133,22 @@ async function resolveLines(user, guestItems) {
       throw new AppError("A product in your cart is no longer available", 400);
     if (item.quantity > MAX_ITEM_QUANTITY)
       throw new AppError(`Maximum ${MAX_ITEM_QUANTITY} units per product`, 400);
-    return { product, quantity: item.quantity, kitId: item.kitId };
+    const variant = cartService.resolveVariant(product, item.variantId);
+    return {
+      product,
+      quantity: item.quantity,
+      kitId: item.kitId,
+      variant,
+      variantId: variant ? variant._id : undefined,
+      variantSku: variant ? variant.sku : "",
+      variantName: variant
+        ? variant.variantName || variant.colorName || ""
+        : "",
+      price: variant ? variant.sellingPrice : product.price,
+      originalPrice: variant
+        ? variant.compareAtPrice || variant.sellingPrice
+        : product.originalPrice,
+    };
   });
   return lines;
 }
@@ -141,9 +181,9 @@ async function placeOrder(
     if (!code && cart.couponCode) code = cart.couponCode;
   }
 
-  const baseItems = lines.map(({ product, quantity, kitId }) => ({
-    price: product.price,
-    originalPrice: product.originalPrice,
+  const baseItems = lines.map(({ price, originalPrice, quantity, kitId }) => ({
+    price,
+    originalPrice,
     quantity,
     kitId,
   }));
@@ -156,23 +196,38 @@ async function placeOrder(
     coupon = couponService.toDescriptor(doc);
   }
 
-  const quantities = new Map();
-  for (const { product, quantity } of lines)
-    quantities.set(
-      String(product._id),
-      (quantities.get(String(product._id)) || 0) + quantity,
-    );
+  const quantities = [];
+  const quantityIndex = new Map();
+  for (const line of lines) {
+    const key = `${line.product._id}:${line.variantId || ""}`;
+    const existing = quantityIndex.get(key);
+    if (existing) existing.qty += line.quantity;
+    else {
+      const entry = {
+        productId: line.product._id,
+        variantId: line.variantId,
+        qty: line.quantity,
+      };
+      quantityIndex.set(key, entry);
+      quantities.push(entry);
+    }
+  }
 
-  const items = lines.map(({ product, quantity, kitId }) => ({
-    product: product._id,
-    name: product.name,
-    image: product.images[0] || "",
-    sku: product.sku,
-    price: product.price,
-    originalPrice: product.originalPrice,
-    quantity,
-    kitId,
-  }));
+  const items = lines.map(
+    ({ product, quantity, kitId, variantId, variantSku, variantName, price, originalPrice }) => ({
+      product: product._id,
+      name: product.name,
+      image: product.images[0] || "",
+      sku: product.sku,
+      variantId,
+      variantSku,
+      variantName,
+      price,
+      originalPrice,
+      quantity,
+      kitId,
+    }),
+  );
   const { itemCount, ...summary } = computeSummary(items, coupon);
 
   await reserveStock(quantities);
@@ -250,12 +305,22 @@ async function cancelAndRestock(order, note) {
   );
   if (res.modifiedCount !== 1)
     throw new AppError("Order was modified, please retry", 409);
-  const quantities = new Map();
-  for (const item of order.items)
-    quantities.set(
-      String(item.product),
-      (quantities.get(String(item.product)) || 0) + item.quantity,
-    );
+  const quantities = [];
+  const index = new Map();
+  for (const item of order.items) {
+    const key = `${item.product}:${item.variantId || ""}`;
+    const existing = index.get(key);
+    if (existing) existing.qty += item.quantity;
+    else {
+      const entry = {
+        productId: item.product,
+        variantId: item.variantId,
+        qty: item.quantity,
+      };
+      index.set(key, entry);
+      quantities.push(entry);
+    }
+  }
   await releaseStock(quantities);
   return Order.findById(order._id);
 }
@@ -276,12 +341,22 @@ async function cancelByCustomer(order) {
 /** Deletes an order, restoring stock when it was still in progress. */
 async function deleteOrder(order) {
   if (order.status !== "cancelled" && order.status !== "delivered") {
-    const quantities = new Map();
-    for (const item of order.items)
-      quantities.set(
-        String(item.product),
-        (quantities.get(String(item.product)) || 0) + item.quantity,
-      );
+    const quantities = [];
+    const index = new Map();
+    for (const item of order.items) {
+      const key = `${item.product}:${item.variantId || ""}`;
+      const existing = index.get(key);
+      if (existing) existing.qty += item.quantity;
+      else {
+        const entry = {
+          productId: item.product,
+          variantId: item.variantId,
+          qty: item.quantity,
+        };
+        index.set(key, entry);
+        quantities.push(entry);
+      }
+    }
     await releaseStock(quantities);
   }
   await Order.deleteOne({ _id: order._id });

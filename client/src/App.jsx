@@ -24,6 +24,8 @@ const LegalPage = lazy(() => import("@/views/LegalPage"));
 const NotFound = lazy(() => import("@/views/NotFound"));
 const AdminDashboardPage = lazy(() => import("@/views/admin/AdminDashboardPage"));
 const AdminProductsPage = lazy(() => import("@/views/admin/AdminProductsPage"));
+const AdminProductEditorPage = lazy(() => import("@/views/admin/AdminProductEditorPage"));
+const AdminProductPreviewPage = lazy(() => import("@/views/admin/AdminProductPreviewPage"));
 const AdminCategoriesPage = lazy(() => import("@/views/admin/AdminCategoriesPage"));
 const AdminOrdersPage = lazy(() => import("@/views/admin/AdminOrdersPage"));
 const AdminOrderDetailPage = lazy(() => import("@/views/admin/AdminOrderDetailPage"));
@@ -92,6 +94,9 @@ const App = () => (
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
           <Route path="products" element={<AdminProductsPage />} />
+          <Route path="products/new" element={<AdminProductEditorPage />} />
+          <Route path="products/:id/edit" element={<AdminProductEditorPage />} />
+          <Route path="products/:id/preview" element={<AdminProductPreviewPage />} />
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="orders/:id" element={<AdminOrderDetailRoute />} />

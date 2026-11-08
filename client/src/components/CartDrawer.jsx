@@ -69,7 +69,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
                 <div className="space-y-4">
                   {cartItems.map((item) => (
                     <motion.div
-                      key={item.id}
+                      key={`${item.id}-${item.variantId ?? "base"}`}
                       layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -83,6 +83,11 @@ const CartDrawer = ({ isOpen, onClose }) => {
                       />
                       <div className="flex-1">
                         <h3 className="font-medium text-sm mb-1">{item.name}</h3>
+                        {item.variantName && (
+                          <p className="text-[10px] uppercase tracking-widest text-primary/80 mb-1">
+                            {item.variantName}
+                          </p>
+                        )}
                         <p className="text-muted-foreground text-xs mb-2">{item.category}</p>
                         <p className="text-primary font-semibold">{formatPrice(item.price)}</p>
                         {item.kitId && (
@@ -93,14 +98,16 @@ const CartDrawer = ({ isOpen, onClose }) => {
                       </div>
                       <div className="flex flex-col items-end justify-between">
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(item.id, item.variantId)}
                           className="text-muted-foreground hover:text-destructive transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                         <div className="flex items-center gap-2 bg-background rounded-full">
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1, item.variantId)
+                            }
                             className="w-8 h-8 flex items-center justify-center hover:text-primary transition-colors"
                           >
                             <Minus className="w-3 h-3" />
@@ -109,7 +116,9 @@ const CartDrawer = ({ isOpen, onClose }) => {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1, item.variantId)
+                            }
                             disabled={item.quantity >= item.stock}
                             className="w-8 h-8 flex items-center justify-center hover:text-primary transition-colors disabled:opacity-40"
                           >

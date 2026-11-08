@@ -90,7 +90,8 @@ const CheckoutForm = () => {
     queryFn: paymentService.config,
     staleTime: 5 * 60 * 1000,
   });
-  const upiEnabled = Boolean(paymentConfig?.upiEnabled);
+  // Show Scan & Pay while the config loads (and if it fails) since UPI is the default.
+  const upiEnabled = paymentConfig ? Boolean(paymentConfig.upiEnabled) : true;
 
   useEffect(() => {
     if (paymentConfig && !upiEnabled) setPaymentMethod("COD");

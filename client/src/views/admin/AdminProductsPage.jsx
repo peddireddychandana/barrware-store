@@ -1,17 +1,14 @@
 import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "@/lib/router";
+import { useRouter } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { adminService, productService } from "@/services";
 import { getErrorMessage } from "@/services/api";
-import { formatPrice } from "@/utils/format";
 import InlineNumberInput from "@/components/admin/InlineNumberInput";
-import ProductForm from "@/components/admin/ProductForm";
 import { LOW_STOCK_LIMIT } from "@/components/admin/productFormModel";
 import {
   ConfirmDialog,
-  Drawer,
   PageHeader,
   Pagination,
   Panel,
@@ -122,12 +119,9 @@ const ProductRow = ({ product, onEdit, onDelete, onPatch, isPatching }) => {
 const AdminProductsContent = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const editId = useSearchParams().get("edit");
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [editing, setEditing] = useState(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const debouncedSearch = useDebouncedValue(search.trim());
 
@@ -138,18 +132,6 @@ const AdminProductsContent = () => {
     placeholderData: (previous) => previous,
   });
   const products = query.data?.items ?? [];
-
-  useEffect(() => {
-    if (!editId) return;
-    productService
-      .get(editId)
-      .then((product) => {
-        setEditing(product);
-        setIsFormOpen(true);
-      })
-      .catch((error) => toast.error(getErrorMessage(error)))
-      .finally(() => router.replace("/admin/products"));
-  }, [editId, router]);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["admin"] });
@@ -176,8 +158,7 @@ const AdminProductsContent = () => {
   });
 
   const openForm = (product = null) => {
-    setEditing(product);
-    setIsFormOpen(true);
+    router.push(product ? `/admin/products/${product._id}/edit` : "/admin/products/new");
   };
 
   return (
@@ -247,20 +228,6 @@ const AdminProductsContent = () => {
           <Pagination pagination={query.data?.pagination} onPage={setPage} />
         </QueryState>
       </Panel>
-
-      <Drawer
-        open={isFormOpen}
-        title={editing ? "EDIT PRODUCT" : "NEW PRODUCT"}
-        onClose={() => setIsFormOpen(false)}
-      >
-        {isFormOpen && (
-          <ProductForm
-            key={editing?._id ?? "new"}
-            product={editing}
-            onDone={() => setIsFormOpen(false)}
-          />
-        )}
-      </Drawer>
 
       <ConfirmDialog
         open={!!pendingDelete}

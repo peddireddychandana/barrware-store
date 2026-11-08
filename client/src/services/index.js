@@ -32,10 +32,30 @@ export const productService = {
   list: (params) => page(api.get("/products", { params })),
   filters: () => data(api.get("/products/filters")),
   get: (idOrSlug) => data(api.get(`/products/${idOrSlug}`)),
+  getAdmin: (id) => data(api.get(`/admin/products/${id}`)),
+  preview: (id) => data(api.get(`/products/${id}/preview`)),
   reviews: (idOrSlug) => data(api.get(`/products/${idOrSlug}/reviews`)),
   create: (body) => data(api.post("/products", body)),
   update: (id, body) => data(api.put(`/products/${id}`, body)),
   remove: (id) => data(api.delete(`/products/${id}`)),
+  publish: (id) => data(api.post(`/products/${id}/publish`)),
+  draft: (id) => data(api.post(`/products/${id}/draft`)),
+  slugCheck: (slug, excludeId) =>
+    data(api.get("/products/slug-check", { params: { slug, excludeId } })),
+  addVariant: (id, body) => data(api.post(`/products/${id}/variants`, body)),
+  updateVariant: (id, variantId, body) =>
+    data(api.put(`/products/${id}/variants/${variantId}`, body)),
+  deleteVariant: (id, variantId) =>
+    data(api.delete(`/products/${id}/variants/${variantId}`)),
+  addImages: (id, assets) => data(api.post(`/products/${id}/images`, { assets })),
+  deleteImage: (id, imageId) =>
+    data(api.delete(`/products/${id}/images/${imageId}`)),
+  reorderImages: (id, order) =>
+    data(api.patch(`/products/${id}/images/reorder`, { order })),
+  addRelated: (id, relatedProductId) =>
+    data(api.post(`/products/${id}/related`, { relatedProductId })),
+  removeRelated: (id, relatedProductId) =>
+    data(api.delete(`/products/${id}/related/${relatedProductId}`)),
 };
 
 export const categoryService = {
@@ -52,9 +72,21 @@ export const reviewService = {
 
 export const cartService = {
   get: () => data(api.get("/cart")),
-  add: (productId, quantity = 1) => data(api.post("/cart", { productId, quantity })),
-  update: (productId, quantity) => data(api.put(`/cart/${productId}`, { quantity })),
-  remove: (productId) => data(api.delete(`/cart/${productId}`)),
+  add: (productId, quantity = 1, variantId) =>
+    data(api.post("/cart", { productId, quantity, ...(variantId ? { variantId } : {}) })),
+  update: (productId, quantity, variantId) =>
+    data(
+      api.put(`/cart/${productId}`, {
+        quantity,
+        ...(variantId ? { variantId } : {}),
+      }),
+    ),
+  remove: (productId, variantId) =>
+    data(
+      api.delete(`/cart/${productId}`, {
+        params: variantId ? { variantId } : {},
+      }),
+    ),
   clear: () => data(api.delete("/cart")),
   quote: (items, couponCode = "") =>
     data(api.post("/cart/quote", { items, couponCode })),
@@ -127,6 +159,11 @@ export const adminService = {
     const form = new FormData();
     files.forEach((file) => form.append("images", file));
     return data(api.post("/uploads", form)).then((res) => res.urls);
+  },
+  uploadWebpImages: (files) => {
+    const form = new FormData();
+    files.forEach((file) => form.append("images", file));
+    return data(api.post("/uploads/webp", form)).then((res) => res.assets);
   },
   coupons: (params) => page(api.get("/admin/coupons", { params })),
   createCoupon: (body) => data(api.post("/admin/coupons", body)),

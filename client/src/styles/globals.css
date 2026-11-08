@@ -304,6 +304,35 @@
       0 0 0 2px var(--vyrnt-gold),
       0 0 20px color-mix(in srgb, var(--vyrnt-gold) 35%, transparent);
   }
+
+  .product-rich-text h2 {
+    font-size: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .product-rich-text h3 {
+    font-size: 1.2rem;
+    margin-top: 0.75rem;
+  }
+
+  .product-rich-text ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+
+  .product-rich-text ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+  }
+
+  .product-rich-text a {
+    color: var(--vyrnt-gold);
+    text-decoration: underline;
+  }
+
+  .product-rich-text strong {
+    color: var(--vyrnt-champagne);
+  }
 }
 
 @layer utilities {

@@ -16,6 +16,7 @@ exports.add = async (req, res) =>
       req.user._id,
       req.body.productId,
       req.body.quantity,
+      req.body.variantId,
     ),
     { message: "Added to cart" },
   );
@@ -26,12 +27,17 @@ exports.update = async (req, res) =>
       req.user._id,
       req.params.productId,
       req.body.quantity,
+      req.body.variantId,
     ),
   );
 exports.remove = async (req, res) =>
   sendSuccess(
     res,
-    await cartService.removeItem(req.user._id, req.params.productId),
+    await cartService.removeItem(
+      req.user._id,
+      req.params.productId,
+      req.query.variantId,
+    ),
   );
 exports.clear = async (req, res) =>
   sendSuccess(res, await cartService.clearCart(req.user._id));

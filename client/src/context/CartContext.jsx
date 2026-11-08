@@ -56,11 +56,29 @@ const writeGuestCoupon = (code) => {
 };
 
 const toCartItems = (items = []) =>
-  items.map(({ product, quantity, kitId }) => ({
-    ...normalizeProduct(product),
-    quantity,
-    kitId,
-  }));
+  items.map(
+    ({
+      product,
+      quantity,
+      kitId,
+      variantId,
+      variantSku,
+      variantName,
+      price,
+      originalPrice,
+      variant,
+    }) => ({
+      ...normalizeProduct(product),
+      price: price ?? product.price,
+      originalPrice: originalPrice ?? product.originalPrice,
+      stock: variant?.stock ?? product.stock,
+      quantity,
+      kitId,
+      variantId,
+      variantSku,
+      variantName,
+    }),
+  );
 
 export const CartProvider = ({ children }) => {
   const { isLoggedIn, isLoading: isAuthLoading } = useAuth();
@@ -115,7 +133,9 @@ export const CartProvider = ({ children }) => {
         if (isLoggedIn && !wasLoggedIn.current) {
           const guestLines = readGuestCart();
           for (const line of guestLines) {
-            await cartService.add(line.productId, line.quantity).catch(() => {});
+            await cartService
+              .add(line.productId, line.quantity, line.variantId)
+              .catch(() => {});
           }
           if (guestLines.length > 0) writeGuestCart([]);
         }
@@ -134,35 +154,47 @@ export const CartProvider = ({ children }) => {
   };
 
   /**
-   * Adds a product. Resolves true on success; failures (e.g. over stock) toast the server message.
+   * Adds a product (or one of its variants). Resolves true on success; failures toast the server message.
    */
-  const addToCart = async (product, quantity = 1) => {
+  const addToCart = async (product, quantity = 1, variantId) => {
     const productId = product.id ?? product._id;
+    const variant =
+      variantId && product.variants
+        ? product.variants.find((item) => String(item._id) === String(variantId))
+        : null;
+    const unitPrice = variant ? variant.sellingPrice : product.price;
+    const available = variant ? variant.stock : product.stock;
     try {
       if (isLoggedIn) {
-        applyCart(await cartService.add(productId, quantity));
+        applyCart(await cartService.add(productId, quantity, variantId));
       } else {
-        const existing = readGuestCart().find((line) => line.productId === productId);
+        const existing = readGuestCart().find(
+          (line) =>
+            line.productId === productId &&
+            String(line.variantId || "") === String(variantId || ""),
+        );
         const wanted = (existing?.quantity ?? 0) + quantity;
-        if (product.stock !== undefined && wanted > product.stock) {
-          throw new Error(`Only ${product.stock} in stock`);
+        if (available !== undefined && wanted > available) {
+          throw new Error(`Only ${available} in stock`);
         }
         await mutateGuestCart((lines) =>
           existing
             ? lines.map((line) =>
-                line.productId === productId ? { ...line, quantity: wanted } : line,
+                line === existing ? { ...line, quantity: wanted } : line,
               )
-            : [...lines, { productId, quantity }],
+            : [...lines, { productId, quantity, ...(variantId ? { variantId } : {}) }],
         );
       }
       trackEvent("add_to_cart", {
         currency: "INR",
-        value: Number(product.price || 0) * quantity,
+        value: Number(unitPrice || 0) * quantity,
         items: [
           {
-            item_id: productId,
-            item_name: product.name,
-            price: Number(product.price || 0),
+            item_id: variantId ? `${productId}-${variantId}` : productId,
+            item_name: variant
+              ? `${product.name} (${variant.variantName || variant.colorName || "variant"})`
+              : product.name,
+            price: Number(unitPrice || 0),
             quantity,
           },
         ],
@@ -174,23 +206,31 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateQuantity = async (productId, quantity) => {
+  const updateQuantity = async (productId, quantity, variantId) => {
     try {
       if (isLoggedIn) {
-        applyCart(await cartService.update(productId, Math.max(quantity, 0)));
-      } else {
-        await mutateGuestCart((lines) =>
-          quantity <= 0
-            ? lines.filter((line) => line.productId !== productId)
-            : lines.map((line) => (line.productId === productId ? { ...line, quantity } : line)),
+        applyCart(
+          await cartService.update(productId, Math.max(quantity, 0), variantId),
         );
+      } else {
+        await mutateGuestCart((lines) => {
+          const matches = (line) =>
+            line.productId === productId &&
+            String(line.variantId || "") === String(variantId || "");
+          return quantity <= 0
+            ? lines.filter((line) => !matches(line))
+            : lines.map((line) =>
+                matches(line) ? { ...line, quantity } : line,
+              );
+        });
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
   };
 
-  const removeFromCart = (productId) => updateQuantity(productId, 0);
+  const removeFromCart = (productId, variantId) =>
+    updateQuantity(productId, 0, variantId);
 
   const clearCart = async () => {
     if (isLoggedIn) {
@@ -243,6 +283,7 @@ export const CartProvider = ({ children }) => {
     productId: item.id ?? item._id,
     quantity: item.quantity,
     ...(item.kitId ? { kitId: item.kitId } : {}),
+    ...(item.variantId ? { variantId: item.variantId } : {}),
   }));
 
   const addKit = async (kitItems) => {

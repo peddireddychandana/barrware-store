@@ -41,6 +41,7 @@ module.exports.authRoutes = express
 
 router.get("/products", products.list);
 router.get("/products/filters", products.filters);
+router.get("/products/slug-check", ...adminOnly, products.slugCheck);
 router.get("/products/:idOrSlug/reviews", products.reviews);
 router.get("/products/:idOrSlug", products.getOne);
 router.post(
@@ -56,6 +57,37 @@ router.put(
   products.update,
 );
 router.delete("/products/:id", ...adminOnly, products.remove);
+router.get("/products/:id/preview", ...adminOnly, products.preview);
+router.post("/products/:id/publish", ...adminOnly, products.publish);
+router.post("/products/:id/draft", ...adminOnly, products.draft);
+router.post("/products/:id/variants", ...adminOnly, products.addVariant);
+router.put(
+  "/products/:id/variants/:variantId",
+  ...adminOnly,
+  products.updateVariant,
+);
+router.delete(
+  "/products/:id/variants/:variantId",
+  ...adminOnly,
+  products.deleteVariant,
+);
+router.post("/products/:id/images", ...adminOnly, products.addImages);
+router.delete(
+  "/products/:id/images/:imageId",
+  ...adminOnly,
+  products.deleteImage,
+);
+router.patch(
+  "/products/:id/images/reorder",
+  ...adminOnly,
+  products.reorderImages,
+);
+router.post("/products/:id/related", ...adminOnly, products.addRelated);
+router.delete(
+  "/products/:id/related/:relatedProductId",
+  ...adminOnly,
+  products.removeRelated,
+);
 
 router.get("/categories", categories.list);
 router.post(
@@ -73,6 +105,7 @@ router.put(
 router.delete("/categories/:id", ...adminOnly, categories.remove);
 
 router.post("/uploads", ...adminOnly, imagesUpload, misc.upload);
+router.post("/uploads/webp", ...adminOnly, imagesUpload, misc.uploadWebp);
 router.post("/newsletter", validate(schemas.newsletter), misc.subscribe);
 router.post(
   "/newsletter/unsubscribe",
@@ -184,6 +217,7 @@ router.get("/admin/customers", ...adminOnly, admin.customers);
 router.get("/admin/customers/:id", ...adminOnly, reports.customerDetail);
 router.delete("/admin/customers/:id", ...adminOnly, admin.removeCustomer);
 router.get("/admin/products", ...adminOnly, products.adminList);
+router.get("/admin/products/:id", ...adminOnly, products.adminGetOne);
 
 router.get("/admin/reports/sales", ...adminOnly, reports.sales);
 router.get("/admin/reports/export/orders", ...adminOnly, reports.exportOrders);

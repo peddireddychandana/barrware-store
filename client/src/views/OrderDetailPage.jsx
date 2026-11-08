@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "@/components/AppLink";
-import { useParams, useRouter } from "@/lib/router";
+import { useParams, useRouter, useSearchParams } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -52,7 +52,7 @@ const PaymentBadge = ({ status }) => (
   </span>
 );
 
-const PaymentSection = ({ order, onUpdated, token, upiId }) => {
+const UpiPendingPanel = ({ order, onUpdated, token, upiId, onSubmitted }) => {
   const [reference, setReference] = useState(order.paymentReference || "");
 
   const submit = useMutation({
@@ -60,6 +60,7 @@ const PaymentSection = ({ order, onUpdated, token, upiId }) => {
     onSuccess: () => {
       toast.success("Payment reference submitted. We will confirm it shortly.");
       onUpdated();
+      onSubmitted?.();
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
@@ -73,6 +74,96 @@ const PaymentSection = ({ order, onUpdated, token, upiId }) => {
     submit.mutate();
   };
 
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-secondary/30 p-4">
+        <div className="rounded-xl bg-white p-3">
+          <QRCodeSVG value={order.upiUri} size={188} level="M" includeMargin />
+        </div>
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Scan with any UPI app</p>
+          <p className="font-display text-2xl text-gradient mt-1">
+            {formatPrice(order.summary.total)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">Order {order.orderNumber}</p>
+          {upiId && (
+            <p className="text-xs text-muted-foreground mt-1 font-mono">UPI ID: {upiId}</p>
+          )}
+        </div>
+        <a
+          href={order.upiUri}
+          className="inline-flex items-center justify-center gap-2 gradient-neon text-primary-foreground px-5 py-2.5 text-sm font-semibold uppercase tracking-wide rounded-full"
+        >
+          <QrCode className="w-4 h-4" /> Open UPI app
+        </a>
+      </div>
+
+      <div className="rounded-xl border border-border p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm">
+          <QrCode className="w-4 h-4 text-primary" />
+          <span className="font-medium">Already paid?</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Enter the transaction / UTR ID shown in your UPI app so we can verify your payment.
+        </p>
+        {order.paymentReference && (
+          <p className="text-xs text-muted-foreground">
+            Submitted reference:{" "}
+            <span className="text-foreground font-medium">{order.paymentReference}</span>
+            {order.paymentSubmittedAt && ` · ${formatDateTime(order.paymentSubmittedAt)}`}
+          </p>
+        )}
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+          <input
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            maxLength={80}
+            placeholder="e.g. 123456789012"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={submit.isPending}
+            className="inline-flex items-center justify-center gap-2 gradient-neon text-primary-foreground px-4 py-2 text-sm font-semibold uppercase tracking-wide rounded-lg disabled:opacity-60"
+          >
+            {submit.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            Submit
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const PaymentDialog = ({ order, upiId, token, onUpdated, onSubmitted }) => (
+  <div className="fixed inset-0 z-[80] bg-background/90 backdrop-blur-md flex items-start justify-center overflow-y-auto p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Scan and pay"
+      className="w-full max-w-md bg-card border border-border rounded-2xl p-6 card-shadow my-8"
+    >
+      <div className="text-center mb-4">
+        <h2 className="text-3xl font-display">SCAN &amp; PAY</h2>
+        <p className="text-sm text-muted-foreground">
+          Order {order.orderNumber} · {formatPrice(order.summary.total)}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Enter the UTR / transaction ID after paying to close this window.
+        </p>
+      </div>
+      <UpiPendingPanel
+        order={order}
+        upiId={upiId}
+        token={token}
+        onUpdated={onUpdated}
+        onSubmitted={onSubmitted}
+      />
+    </div>
+  </div>
+);
+
+const PaymentSection = ({ order, onUpdated, token, upiId }) => {
   if (order.paymentMethod !== "UPI") {
     return (
       <Card title="PAYMENT">
@@ -105,63 +196,12 @@ const PaymentSection = ({ order, onUpdated, token, upiId }) => {
           </div>
         </div>
       ) : order.upiUri ? (
-        <div className="space-y-4">
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-secondary/30 p-4">
-            <div className="rounded-xl bg-white p-3">
-              <QRCodeSVG value={order.upiUri} size={188} level="M" includeMargin />
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Scan with any UPI app</p>
-              <p className="font-display text-2xl text-gradient mt-1">
-                {formatPrice(order.summary.total)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Order {order.orderNumber}</p>
-              {upiId && (
-                <p className="text-xs text-muted-foreground mt-1 font-mono">UPI ID: {upiId}</p>
-              )}
-            </div>
-            <a
-              href={order.upiUri}
-              className="inline-flex items-center justify-center gap-2 gradient-neon text-primary-foreground px-5 py-2.5 text-sm font-semibold uppercase tracking-wide rounded-full"
-            >
-              <QrCode className="w-4 h-4" /> Open UPI app
-            </a>
-          </div>
-
-          <div className="rounded-xl border border-border p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <QrCode className="w-4 h-4 text-primary" />
-              <span className="font-medium">Already paid?</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Enter the transaction / UTR ID shown in your UPI app so we can verify your payment.
-            </p>
-            {order.paymentReference && (
-              <p className="text-xs text-muted-foreground">
-                Submitted reference:{" "}
-                <span className="text-foreground font-medium">{order.paymentReference}</span>
-                {order.paymentSubmittedAt && ` · ${formatDateTime(order.paymentSubmittedAt)}`}
-              </p>
-            )}
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
-              <input
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                maxLength={80}
-                placeholder="e.g. 123456789012"
-                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={submit.isPending}
-                className="inline-flex items-center justify-center gap-2 gradient-neon text-primary-foreground px-4 py-2 text-sm font-semibold uppercase tracking-wide rounded-lg disabled:opacity-60"
-              >
-                {submit.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Submit
-              </button>
-            </form>
-          </div>
-        </div>
+        <UpiPendingPanel
+          order={order}
+          upiId={upiId}
+          token={token}
+          onUpdated={onUpdated}
+        />
       ) : (
         <p className="text-sm text-muted-foreground">
           The payment QR is not available right now. Please contact us at{" "}

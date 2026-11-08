@@ -15,9 +15,9 @@ import RatingStars from "@/components/RatingStars";
 
 const LOW_STOCK_THRESHOLD = 10;
 
-const getStockLabel = (stock) => {
+const getStockLabel = (stock, threshold = LOW_STOCK_THRESHOLD) => {
   if (stock <= 0) return { text: "Out of stock", className: "text-destructive" };
-  if (stock <= LOW_STOCK_THRESHOLD)
+  if (stock <= threshold)
     return { text: `Only ${stock} left`, className: "text-primary" };
   return { text: "In stock", className: "text-primary" };
 };
@@ -79,6 +79,44 @@ const Gallery = ({ product }) => {
   );
 };
 
+const VariantSelector = ({ variants, selectedId, onSelect }) => (
+  <div className="mb-6">
+    <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+      Finish / Variant
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {variants.map((variant) => {
+        const active = String(variant._id) === String(selectedId);
+        const label = variant.variantName || variant.colorName || "Default";
+        return (
+          <button
+            key={variant._id}
+            type="button"
+            onClick={() => onSelect(String(variant._id))}
+            aria-pressed={active}
+            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors ${
+              active
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-border text-muted-foreground hover:border-primary/50"
+            }`}
+          >
+            <span
+              className="w-4 h-4 rounded-full border border-border"
+              style={{ backgroundColor: variant.colorHex || "#1a1a1a" }}
+            />
+            <span>{label}</span>
+            {variant.finishType && (
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                {variant.finishType}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const NotFoundMessage = () => (
   <div className="text-center py-24">
     <h1 className="text-5xl font-display mb-4">
@@ -103,9 +141,13 @@ const ProductDetailPage = () => {
   const { isWishlisted, toggle: toggleWishlist } = useWishlist();
   const { data: product, isLoading, isError } = useProduct(slug);
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState("");
   const [isBusy, setIsBusy] = useState(false);
 
-  useEffect(() => setQuantity(1), [slug]);
+  useEffect(() => {
+    setQuantity(1);
+    setSelectedVariantId("");
+  }, [slug]);
 
   if (isLoading) {
     return (
@@ -122,21 +164,54 @@ const ProductDetailPage = () => {
     );
   }
 
-  const stock = getStockLabel(product.stock);
-  const isOutOfStock = product.stock <= 0;
-  const maxQuantity = Math.max(product.stock, 1);
+  const variants = (product.variants ?? []).filter(
+    (variant) => variant.status !== "inactive",
+  );
+  const selectedVariant =
+    variants.find((variant) => String(variant._id) === String(selectedVariantId)) ??
+    (variants.length ? variants[0] : null);
+  const displayPrice = selectedVariant
+    ? selectedVariant.sellingPrice
+    : product.price;
+  const displayOriginal = selectedVariant
+    ? selectedVariant.compareAtPrice || selectedVariant.sellingPrice
+    : product.originalPrice;
+  const stockValue = selectedVariant ? selectedVariant.stock : product.stock;
+  const displayImages =
+    selectedVariant?.images?.length > 0 ? selectedVariant.images : product.images;
+  const discountPercent =
+    displayOriginal > displayPrice && displayOriginal > 0
+      ? Math.round(((displayOriginal - displayPrice) / displayOriginal) * 100)
+      : 0;
+  const stock = getStockLabel(
+    stockValue,
+    selectedVariant?.lowStockThreshold ?? product.lowStockThreshold,
+  );
+  const isOutOfStock = stockValue <= 0;
+  const maxQuantity = Math.max(stockValue, 1);
   const specRows = getSpecRows(product);
+  const variantLabel = selectedVariant
+    ? selectedVariant.variantName || selectedVariant.colorName || ""
+    : "";
+
+  const handleSelectVariant = (variantId) => {
+    setSelectedVariantId(variantId);
+    setQuantity(1);
+  };
 
   const handleAddToCart = async () => {
     setIsBusy(true);
-    const added = await addToCart(product, quantity);
+    const added = await addToCart(product, quantity, selectedVariant?._id);
     setIsBusy(false);
-    if (added) toast.success(`${quantity} × ${product.name} added to cart`);
+    if (added)
+      toast.success(
+        `${quantity} × ${product.name}${variantLabel ? ` (${variantLabel})` : ""} added to cart`,
+      );
   };
 
   const handleBuyNow = async () => {
     setIsBusy(true);
-    const added = await addToCart(product, quantity);
+    const added = await addToCart(product, quantity, selectedVariant?._id);
     setIsBusy(false);
     if (added) router.push("/checkout");
   };
@@ -154,7 +229,10 @@ const ProductDetailPage = () => {
       </motion.div>
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-14">
-        <Gallery key={product._id} product={product} />
+        <Gallery
+          key={`${product._id}-${selectedVariant?._id ?? "base"}`}
+          product={{ ...product, images: displayImages }}
+        />
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">
@@ -170,21 +248,31 @@ const ProductDetailPage = () => {
             </span>
           </div>
 
+          {variants.length > 0 && (
+            <VariantSelector
+              variants={variants}
+              selectedId={selectedVariant?._id}
+              onSelect={handleSelectVariant}
+            />
+          )}
+
           <div className="flex items-baseline gap-3 mb-5">
-            <span className="text-3xl font-semibold">{formatPrice(product.price)}</span>
-            {product.originalPrice > product.price && (
+            <span className="text-3xl font-semibold">{formatPrice(displayPrice)}</span>
+            {displayOriginal > displayPrice && (
               <>
                 <span className="text-lg text-muted-foreground line-through">
-                  {formatPrice(product.originalPrice)}
+                  {formatPrice(displayOriginal)}
                 </span>
                 <span className="px-3 py-1 bg-destructive text-destructive-foreground text-[10px] font-semibold uppercase tracking-widest rounded-full">
-                  Save {product.discountPercent}%
+                  Save {discountPercent}%
                 </span>
               </>
             )}
           </div>
 
-          <p className="text-muted-foreground mb-6">{product.shortDescription}</p>
+          <p className="text-muted-foreground mb-6">
+            {product.shortDescription || product.subtitle}
+          </p>
           <p className={`text-sm font-medium mb-6 ${stock.className}`}>{stock.text}</p>
 
           <div className="flex flex-wrap items-center gap-4 mb-6">
@@ -249,7 +337,25 @@ const ProductDetailPage = () => {
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 mt-14">
         <section>
           <h2 className="text-3xl font-display mb-4">DESCRIPTION</h2>
-          <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
+          {/<[a-z][\s\S]*>/i.test(product.description || "") ? (
+            <div
+              className="product-rich-text text-muted-foreground space-y-3"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
+          ) : (
+            <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
+          )}
+          {product.giftPackaging?.enabled && (
+            <div className="mt-6 rounded-2xl border border-primary/40 bg-primary/5 px-5 py-4">
+              <p className="text-xs uppercase tracking-widest text-primary mb-1">
+                Complimentary Gift Packaging
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {product.giftPackaging.description ||
+                  "Presented in a signature luxury gift box with a hand-written card."}
+              </p>
+            </div>
+          )}
         </section>
         <section>
           <h2 className="text-3xl font-display mb-4">SPECIFICATIONS</h2>

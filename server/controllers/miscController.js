@@ -5,7 +5,7 @@ const Subscriber = require("../models/Subscriber");
 const AppError = require("../utils/AppError");
 const { sendSuccess, sendList, parsePagination } = require("../utils/response");
 const { recalculateProductRating } = require("../services/reviewService");
-const { storeImages } = require("../services/uploadService");
+const { storeImages, storeWebpImages } = require("../services/uploadService");
 
 exports.createReview = async (req, res) => {
   const { productId, rating, title, comment } = req.body;
@@ -87,5 +87,12 @@ exports.upload = async (req, res) =>
   sendSuccess(
     res,
     { urls: await storeImages(req.files, req) },
+    { status: 201 },
+  );
+
+exports.uploadWebp = async (req, res) =>
+  sendSuccess(
+    res,
+    { assets: await storeWebpImages(req.files, req) },
     { status: 201 },
   );
