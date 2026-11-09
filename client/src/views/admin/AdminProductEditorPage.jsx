@@ -60,10 +60,9 @@ const TABS = [
 ];
 
 const STOREFRONT_PLACEMENTS = [
-  { value: "none", label: "Not on storefront (catalogue only)" },
-  { value: "featured", label: "Featured products" },
-  { value: "bestSeller", label: "Best sellers (Shop the Bar)" },
-  { value: "premium", label: "Premium collection (The Premium Edit)" },
+  { field: "featured", label: "Featured products" },
+  { field: "bestSeller", label: "Best sellers (Shop the Bar)" },
+  { field: "premium", label: "Premium collection (The Premium Edit)" },
 ];
 
 const StatusBadge = ({ status }) => {
@@ -281,19 +280,9 @@ const AdminProductEditorPage = () => {
     ? totalVariantStock
     : Number(form.stock) || 0;
   const stockState = inventoryState(stock, form.lowStockThreshold);
-  const storefrontPlacement = form.featured
-    ? "featured"
-    : form.bestSeller
-      ? "bestSeller"
-      : form.premium
-        ? "premium"
-        : "none";
-  const applyStorefrontPlacement = (placement) =>
-    patch({
-      featured: placement === "featured",
-      bestSeller: placement === "bestSeller",
-      premium: placement === "premium",
-    });
+  const hasStorefrontPlacement = STOREFRONT_PLACEMENTS.some(
+    ({ field }) => form[field],
+  );
   const cover =
     form.mediaAssets[0]?.thumbnailUrl ||
     form.mediaAssets[0]?.webpUrl ||
@@ -1241,21 +1230,33 @@ const AdminProductEditorPage = () => {
           </Panel>
 
           <Panel title="Storefront display" className="p-5 space-y-3">
-            <Field label="Show product in">
-              <select
-                value={storefrontPlacement}
-                onChange={(event) => applyStorefrontPlacement(event.target.value)}
-                className={inputClass}
-              >
-                {STOREFRONT_PLACEMENTS.map((placement) => (
-                  <option key={placement.value} value={placement.value}>
-                    {placement.label}
-                  </option>
-                ))}
-              </select>
+            <Field label="Show product in (select one or more)">
+              <div className="flex flex-wrap gap-2">
+                {STOREFRONT_PLACEMENTS.map(({ field, label }) => {
+                  const active = Boolean(form[field]);
+                  return (
+                    <button
+                      key={field}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => patch({ [field]: !active })}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition-colors ${
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      {active && <Check className="w-3.5 h-3.5" />}
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </Field>
             <p className="text-xs text-muted-foreground">
-              The product appears in the selected storefront section once it is active.
+              {hasStorefrontPlacement
+                ? "The product appears in every selected storefront section once it is active."
+                : "No section selected — the product stays in the catalogue only."}
             </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border">
               <Globe className="w-3.5 h-3.5" />
