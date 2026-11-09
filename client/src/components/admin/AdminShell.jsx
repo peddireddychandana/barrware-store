@@ -25,7 +25,7 @@ const isActiveLink = (pathname, href) =>
 const AdminNav = () => {
   const pathname = usePathname();
   return (
-    <nav className="flex gap-2 overflow-x-auto pb-2 mb-8" aria-label="Admin sections">
+    <nav className="flex flex-wrap gap-2 mb-8" aria-label="Admin sections">
       {ADMIN_LINKS.map(({ label, href }) => (
         <Link
           key={href}

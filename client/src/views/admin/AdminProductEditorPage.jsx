@@ -59,6 +59,13 @@ const TABS = [
   { id: "gift", label: "Gift Packaging" },
 ];
 
+const STOREFRONT_PLACEMENTS = [
+  { value: "none", label: "Not on storefront (catalogue only)" },
+  { value: "featured", label: "Featured products" },
+  { value: "bestSeller", label: "Best sellers (Shop the Bar)" },
+  { value: "premium", label: "Premium collection (The Premium Edit)" },
+];
+
 const StatusBadge = ({ status }) => {
   const styles = {
     active: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
@@ -274,6 +281,19 @@ const AdminProductEditorPage = () => {
     ? totalVariantStock
     : Number(form.stock) || 0;
   const stockState = inventoryState(stock, form.lowStockThreshold);
+  const storefrontPlacement = form.featured
+    ? "featured"
+    : form.bestSeller
+      ? "bestSeller"
+      : form.premium
+        ? "premium"
+        : "none";
+  const applyStorefrontPlacement = (placement) =>
+    patch({
+      featured: placement === "featured",
+      bestSeller: placement === "bestSeller",
+      premium: placement === "premium",
+    });
   const cover =
     form.mediaAssets[0]?.thumbnailUrl ||
     form.mediaAssets[0]?.webpUrl ||
@@ -377,13 +397,13 @@ const AdminProductEditorPage = () => {
 
       <div className="grid xl:grid-cols-[1fr_320px] gap-6 items-start">
         <div>
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide mb-4 border-b border-border">
+          <div className="flex flex-wrap gap-1 mb-4 border-b border-border">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2.5 text-xs font-medium uppercase tracking-widest whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium uppercase tracking-wide sm:tracking-widest whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab.id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -1220,21 +1240,23 @@ const AdminProductEditorPage = () => {
             </ul>
           </Panel>
 
-          <Panel title="Storefront flags" className="p-5 space-y-3">
-            {[
-              ["featured", "Featured product"],
-              ["bestSeller", "Best seller"],
-              ["premium", "Premium collection"],
-            ].map(([field, label]) => (
-              <div key={field} className="flex items-center justify-between gap-3">
-                <span className="text-sm">{label}</span>
-                <Toggle
-                  checked={form[field]}
-                  onChange={(value) => patch({ [field]: value })}
-                  label={label}
-                />
-              </div>
-            ))}
+          <Panel title="Storefront display" className="p-5 space-y-3">
+            <Field label="Show product in">
+              <select
+                value={storefrontPlacement}
+                onChange={(event) => applyStorefrontPlacement(event.target.value)}
+                className={inputClass}
+              >
+                {STOREFRONT_PLACEMENTS.map((placement) => (
+                  <option key={placement.value} value={placement.value}>
+                    {placement.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <p className="text-xs text-muted-foreground">
+              The product appears in the selected storefront section once it is active.
+            </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border">
               <Globe className="w-3.5 h-3.5" />
               {form.salesChannels.length} sales channel
