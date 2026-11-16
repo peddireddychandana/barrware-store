@@ -300,7 +300,21 @@ const ProductForm = ({ product, onDone }) => {
 
       <Section title="DETAILS">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {["material", "colour", "size", "capacity", "weight"].map((field) => (
+          {[
+            "material",
+            "colour",
+            "finish",
+            "design",
+            "baseType",
+            "craftsmanship",
+            "size",
+            "capacity",
+            "weight",
+            "modelNumber",
+            "countryOfOrigin",
+            "careInstructions",
+            "packageContents",
+          ].map((field) => (
             <Field key={field} label={field}>
               <input value={form[field]} onChange={setField(field)} className={inputClass} />
             </Field>

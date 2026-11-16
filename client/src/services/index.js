@@ -24,8 +24,11 @@ export const authService = {
   },
   me: () => data(api.get("/auth/me")),
   updateProfile: (body) => data(api.put("/auth/me", body)),
+  changePassword: (body) => data(api.put("/auth/password", body)),
   forgotPassword: (body) => data(api.post("/auth/forgot-password", body)),
   resetPassword: (body) => data(api.post("/auth/reset-password", body)),
+  sendOtp: (body) => data(api.post("/auth/otp/send", body)),
+  verifyOtp: (body) => authUser(api.post("/auth/otp/verify", body)),
 };
 
 export const productService = {
@@ -34,7 +37,10 @@ export const productService = {
   get: (idOrSlug) => data(api.get(`/products/${idOrSlug}`)),
   getAdmin: (id) => data(api.get(`/admin/products/${id}`)),
   preview: (id) => data(api.get(`/products/${id}/preview`)),
-  reviews: (idOrSlug) => data(api.get(`/products/${idOrSlug}/reviews`)),
+  reviews: (idOrSlug, params = {}) =>
+    data(api.get(`/products/${idOrSlug}/reviews`, { params })),
+  reviewsSummary: (idOrSlug) =>
+    data(api.get(`/products/${idOrSlug}/reviews/summary`)),
   create: (body) => data(api.post("/products", body)),
   update: (id, body) => data(api.put(`/products/${id}`, body)),
   remove: (id) => data(api.delete(`/products/${id}`)),
@@ -68,6 +74,13 @@ export const categoryService = {
 export const reviewService = {
   create: (body) => data(api.post("/reviews", body)),
   recent: (limit = 6) => data(api.get("/reviews", { params: { limit } })),
+  update: (id, body) => data(api.put(`/reviews/${id}`, body)),
+  remove: (id) => data(api.delete(`/reviews/${id}`)),
+  uploadImages: (files) => {
+    const form = new FormData();
+    files.forEach((file) => form.append("images", file));
+    return data(api.post("/uploads/review-images", form)).then((res) => res.urls);
+  },
 };
 
 export const cartService = {
@@ -195,4 +208,13 @@ export const newsletterService = {
 
 export const contactService = {
   send: (body) => data(api.post("/contact", body)),
+};
+
+export const supportService = {
+  send: (body) => data(api.post("/support", body)),
+};
+
+export const accountService = {
+  coupons: () => data(api.get("/coupons/available")),
+  notifications: () => data(api.get("/notifications")),
 };

@@ -7,6 +7,7 @@ import { ArrowLeft, Banknote, QrCode, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useLocation as useDeliveryLocation } from "@/context/LocationContext";
 import { addressService, orderService, paymentService } from "@/services";
 import { getErrorMessage } from "@/services/api";
 import { formatPrice } from "@/utils/format";
@@ -31,16 +32,16 @@ const EMPTY_FORM = {
   pincode: "",
 };
 
-const buildInitialForm = (user) => ({
+const buildInitialForm = (user, location) => ({
   ...EMPTY_FORM,
   fullName: user?.name ?? "",
   email: user?.email ?? "",
   phone: user?.phone ?? "",
   line1: user?.address?.line1 ?? "",
   line2: user?.address?.line2 ?? "",
-  city: user?.address?.city ?? "",
-  state: user?.address?.state ?? "",
-  pincode: user?.address?.pincode ?? "",
+  city: user?.address?.city || location?.city || "",
+  state: user?.address?.state || location?.state || "",
+  pincode: user?.address?.pincode || location?.pincode || "",
 });
 
 const validate = (form) => {
@@ -59,6 +60,7 @@ const validate = (form) => {
 const CheckoutForm = () => {
   const router = useRouter();
   const { user, isLoggedIn } = useAuth();
+  const { location: deliveryLocation } = useDeliveryLocation();
   const {
     cartItems,
     summary,
@@ -70,7 +72,7 @@ const CheckoutForm = () => {
     applyCoupon,
     removeCoupon,
   } = useCart();
-  const [form, setForm] = useState(() => buildInitialForm(user));
+  const [form, setForm] = useState(() => buildInitialForm(user, deliveryLocation));
   const [errors, setErrors] = useState({});
   const [isCartReady, setIsCartReady] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false);

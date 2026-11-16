@@ -41,6 +41,11 @@ export const AuthProvider = ({ children }) => {
     return updated;
   }, []);
 
+  const changePassword = useCallback(
+    (details) => authService.changePassword(details),
+    [],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -52,6 +57,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateProfile,
+        changePassword,
         isLoginModalOpen,
         openLoginModal: () => setIsLoginModalOpen(true),
         closeLoginModal: () => setIsLoginModalOpen(false),

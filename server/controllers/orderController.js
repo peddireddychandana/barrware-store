@@ -60,6 +60,29 @@ exports.myOrders = async (req, res) => {
   sendList(res, data, { page, limit, total });
 };
 
+/** Order status updates shown in the customer's account notifications. */
+exports.myNotifications = async (req, res) => {
+  const orders = await Order.find({ user: req.user._id })
+    .select("orderNumber statusHistory")
+    .sort({ updatedAt: -1 })
+    .limit(25);
+  const notifications = orders.flatMap((order) =>
+    (order.statusHistory ?? []).map((entry) => ({
+      orderNumber: order.orderNumber,
+      status: entry.status,
+      note: entry.note,
+      at: entry.at,
+    })),
+  );
+  notifications.sort((a, b) => new Date(b.at) - new Date(a.at));
+  const { page, limit, skip } = parsePagination(req.query, {
+    defaultLimit: 20,
+    maxLimit: 50,
+  });
+  const total = notifications.length;
+  sendList(res, notifications.slice(skip, skip + limit), { page, limit, total });
+};
+
 exports.getOne = async (req, res) =>
   sendSuccess(res, await loadAccessibleOrder(req, { allowAdmin: true }));
 

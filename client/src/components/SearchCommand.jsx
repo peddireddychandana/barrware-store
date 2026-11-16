@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Command } from "cmdk";
 import { Search, ArrowRight, TrendingUp, LayoutGrid } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "@/lib/navigation";
 import { useCategories, useProducts } from "@/hooks/useCatalog";
 import { formatPrice } from "@/utils/format";
@@ -11,6 +12,7 @@ const trending = ["Shaker", "Strainer", "Jigger", "Shot Glass", "Tool Set"];
 const SEARCH_DEBOUNCE_MS = 250;
 
 const SearchCommand = () => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -70,7 +72,7 @@ const SearchCommand = () => {
             exit={{ y: -20, scale: 0.98, opacity: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 260 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-2xl bg-card border border-border rounded-2xl overflow-hidden card-shadow"
+            className="w-full max-w-3xl bg-card border border-border rounded-2xl overflow-hidden card-shadow"
           >
             <Command loop shouldFilter={false}>
               <div className="flex items-center gap-3 px-5 border-b border-border">
@@ -79,7 +81,7 @@ const SearchCommand = () => {
                   autoFocus
                   value={query}
                   onValueChange={setQuery}
-                  placeholder="Search products, materials, categories..."
+                  placeholder={t("search.placeholder")}
                   className="flex-1 py-5 bg-transparent outline-none text-base placeholder:text-muted-foreground"
                 />
                 <kbd className="hidden sm:inline text-xs px-2 py-1 rounded bg-secondary text-muted-foreground">
@@ -90,15 +92,20 @@ const SearchCommand = () => {
               <Command.List className="max-h-[60vh] overflow-y-auto p-3">
                 {debouncedQuery && products.length === 0 && (
                   <div className="py-10 text-center">
-                    <p className="text-sm text-muted-foreground mb-3">No matches for "{query}".</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {t("search.noResults", { query })}
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mb-4">
+                      {t("search.noResultsHint")}
+                    </p>
                     <div className="flex flex-wrap justify-center gap-2">
-                      {trending.map((t) => (
+                      {trending.map((trend) => (
                         <button
-                          key={t}
-                          onClick={() => setQuery(t)}
+                          key={trend}
+                          onClick={() => setQuery(trend)}
                           className="text-xs px-3 py-1.5 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-colors"
                         >
-                          {t}
+                          {trend}
                         </button>
                       ))}
                     </div>
@@ -107,59 +114,71 @@ const SearchCommand = () => {
 
                 {!query && (
                   <Command.Group
-                    heading="Trending"
+                    heading={t("search.trending")}
                     className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground"
                   >
-                    {trending.map((t) => (
+                    {trending.map((trend) => (
                       <Command.Item
-                        key={t}
-                        value={`trending ${t}`}
-                        onSelect={() => setQuery(t)}
+                        key={trend}
+                        value={`trending ${trend}`}
+                        onSelect={() => setQuery(trend)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer data-[selected=true]:bg-secondary transition-colors"
                       >
                         <TrendingUp className="w-4 h-4 text-primary" />
-                        <span className="text-sm">{t}</span>
+                        <span className="text-sm">{trend}</span>
                       </Command.Item>
                     ))}
                   </Command.Group>
                 )}
 
-                <Command.Group
-                  heading={debouncedQuery ? "Products" : "Popular Picks"}
-                  className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground"
-                >
-                  {products.map((p) => (
-                    <Command.Item
-                      key={p._id}
-                      value={p._id}
-                      onSelect={() => go(`/products/${p.slug}`)}
-                      className="flex items-center gap-3 px-2 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-secondary transition-colors"
-                    >
-                      <img
-                        src={p.image}
-                        alt=""
-                        loading="lazy"
-                        className="w-11 h-11 rounded-md object-cover bg-secondary shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{p.name}</div>
-                        <div className="text-[11px] text-muted-foreground truncate">
-                          {p.material} · {p.category}
+                {products.length > 0 && (
+                  <Command.Group
+                    heading={debouncedQuery ? t("search.products") : t("search.popularPicks")}
+                    className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground"
+                  >
+                    {products.map((p) => (
+                      <Command.Item
+                        key={p._id}
+                        value={p._id}
+                        onSelect={() => go(`/products/${p.slug}`)}
+                        className="flex items-center gap-3 px-2 py-2 rounded-lg cursor-pointer data-[selected=true]:bg-secondary transition-colors"
+                      >
+                        <img
+                          src={p.image}
+                          alt=""
+                          loading="lazy"
+                          className="w-11 h-11 rounded-md object-cover bg-secondary shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{p.name}</div>
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {p.material} · {p.category}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-sm font-semibold text-primary shrink-0">
-                        {formatPrice(p.price)}
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                    </Command.Item>
-                  ))}
-                </Command.Group>
+                        <div className="text-sm font-semibold text-primary shrink-0">
+                          {formatPrice(p.price)}
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                      </Command.Item>
+                    ))}
+                    {debouncedQuery && (
+                      <Command.Item
+                        value="view-all-results"
+                        onSelect={() => go(`/products?search=${encodeURIComponent(debouncedQuery)}`)}
+                        className="flex items-center justify-center gap-2 mt-1 px-3 py-3 rounded-lg cursor-pointer data-[selected=true]:bg-secondary transition-colors text-sm font-medium text-primary"
+                      >
+                        <Search className="w-4 h-4" />
+                        {t("search.viewAll")}
+                      </Command.Item>
+                    )}
+                  </Command.Group>
+                )}
 
                 <Command.Group
-                  heading="Categories"
+                  heading={t("search.categories")}
                   className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:text-muted-foreground"
                 >
-                  {[{ name: "All Products", slug: null }, ...categories].map((l) => (
+                  {[{ name: t("footer.allProducts"), slug: null }, ...categories].map((l) => (
                     <Command.Item
                       key={l.slug ?? "all"}
                       value={l.name}
@@ -176,7 +195,9 @@ const SearchCommand = () => {
               <div className="border-t border-border px-4 py-3 flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span>
-                    {debouncedQuery ? `${products.length} results` : "Type to search the catalog"}
+                    {debouncedQuery
+                      ? t("search.results", { count: products.length })
+                      : t("search.typeToSearch")}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingCart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -46,7 +46,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-border">
               <div className="flex items-center gap-3">
-                <ShoppingBag className="w-6 h-6 text-primary" />
+                <ShoppingCart className="w-6 h-6 text-primary" />
                 <h2 className="text-xl font-display">YOUR CART</h2>
               </div>
               <button
@@ -61,7 +61,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
             <div className="flex-1 overflow-y-auto p-6">
               {cartItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
+                  <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
                   <p className="text-lg font-medium mb-2">Your cart is empty</p>
                   <p className="text-muted-foreground text-sm">Add some items to get started</p>
                 </div>

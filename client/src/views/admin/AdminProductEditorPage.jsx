@@ -765,9 +765,16 @@ const AdminProductEditorPage = () => {
                   {[
                     ["material", "Material"],
                     ["colour", "Colour"],
+                    ["finish", "Finish"],
+                    ["design", "Design / Pattern"],
+                    ["baseType", "Base Type"],
+                    ["craftsmanship", "Craftsmanship"],
                     ["size", "Size"],
                     ["capacity", "Capacity"],
                     ["weight", "Weight"],
+                    ["modelNumber", "Model Number"],
+                    ["countryOfOrigin", "Country of Origin"],
+                    ["packageContents", "What's in the Box"],
                   ].map(([field, label]) => (
                     <Field key={field} label={label}>
                       <input
@@ -778,6 +785,14 @@ const AdminProductEditorPage = () => {
                     </Field>
                   ))}
                 </div>
+                <Field label="Care instructions">
+                  <textarea
+                    value={form.careInstructions}
+                    onChange={setField("careInstructions")}
+                    rows={2}
+                    className={inputClass}
+                  />
+                </Field>
               </Panel>
             </div>
           )}

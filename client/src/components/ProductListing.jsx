@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import QuickViewModal from "@/components/QuickViewModal";
 import { useCategories, useInfiniteProducts, useProductFilters } from "@/hooks/useCatalog";
+import { useSearchParams } from "@/lib/router";
 import { formatPrice } from "@/utils/format";
 
 const PAGE_SIZE = 12;
@@ -44,9 +45,16 @@ const ProductListing = ({ fixedCategory, showCategoryTabs = true }) => {
   const [materials, setMaterials] = useState([]);
   const [productType, setProductType] = useState(null);
   const [priceBucket, setPriceBucket] = useState(null);
-  const [search, setSearch] = useState("");
   const [sort, setSort] = useState("popular");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const [searchParams] = useSearchParams();
+  const urlSearch = searchParams.get("search") ?? "";
+  const [search, setSearch] = useState(urlSearch);
+
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
 
   const { data: categories = [] } = useCategories();
   const { data: filterOptions } = useProductFilters();

@@ -129,6 +129,8 @@ const ProfileForm = () => {
   );
 };
 
+export { ProfileForm };
+
 const ProfilePage = () => (
   <PageShell>
     <PageHeading

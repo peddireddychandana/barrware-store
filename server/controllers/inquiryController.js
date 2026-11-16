@@ -11,6 +11,28 @@ exports.create = async (req, res) => {
   });
 };
 
+/** Public help-centre request; stored with its category for the admin inbox. */
+exports.createSupportRequest = async (req, res) => {
+  const { name, email, category, orderNumber, message } = req.body;
+  const inquiry = await Inquiry.create({
+    name,
+    email,
+    category,
+    orderNumber,
+    message,
+    subject: `Help centre: ${category}`,
+  });
+  sendSuccess(
+    res,
+    { reference: inquiry._id },
+    {
+      status: 201,
+      message:
+        "Request received. We will reply within one business day.",
+    },
+  );
+};
+
 exports.unsubscribe = async (req, res) => {
   await Subscriber.deleteOne({ email: req.body.email });
   sendSuccess(res, null, { message: "You have been unsubscribed" });

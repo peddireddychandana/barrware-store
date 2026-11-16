@@ -6,7 +6,7 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /**
  * Lightweight CSRF defence for cookie-authenticated writes: when the browser sends an
- * Origin/Referer, it must match the configured client URL. Requests without an Origin
+ * Origin/Referer, it must match one of the allowed client origins. Requests without an Origin
  * (server-to-server, tests) and Bearer-only requests are unaffected.
  */
 module.exports = function csrfGuard(req, _res, next) {
@@ -17,9 +17,8 @@ module.exports = function csrfGuard(req, _res, next) {
   if (!origin) return next();
 
   try {
-    const allowed = new URL(env.clientUrl).origin;
     const actual = new URL(origin).origin;
-    if (actual === allowed) return next();
+    if (env.allowedOrigins.includes(actual)) return next();
   } catch {
     // Fall through to rejection.
   }

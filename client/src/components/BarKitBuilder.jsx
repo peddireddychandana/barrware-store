@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ShoppingBag } from "lucide-react";
+import { Check, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
@@ -150,7 +150,7 @@ const KitSummary = ({
         disabled={isAdding}
         className="w-full gradient-neon text-primary-foreground py-4 font-semibold uppercase tracking-wide rounded-full neon-glow flex items-center justify-center gap-2 disabled:opacity-60"
       >
-        <ShoppingBag className="w-4 h-4" /> {isAdding ? "Adding..." : "Add Kit to Cart"}
+                <ShoppingCart className="w-4 h-4" /> {isAdding ? "Adding..." : "Add Kit to Cart"}
       </motion.button>
     </div>
   );

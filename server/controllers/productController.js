@@ -43,6 +43,12 @@ exports.remove = async (req, res) => {
   sendSuccess(res, null, { message: "Product deleted" });
 };
 
+const SORT_MAP = {
+  recent: { createdAt: -1 },
+  highest: { rating: -1, createdAt: -1 },
+  lowest: { rating: 1, createdAt: -1 },
+};
+
 exports.reviews = async (req, res) => {
   const product = await productService.findByIdOrSlug(req.params.idOrSlug, {
     includeInactive: true,
@@ -51,6 +57,7 @@ exports.reviews = async (req, res) => {
     defaultLimit: 10,
     maxLimit: 50,
   });
+  const sort = SORT_MAP[String(req.query.sort)] ?? SORT_MAP.recent;
   const filter = {
     product: product._id,
     isApproved: true,
@@ -59,12 +66,46 @@ exports.reviews = async (req, res) => {
   const [data, total] = await Promise.all([
     Review.find(filter)
       .populate("user", "name")
-      .sort({ createdAt: -1 })
+      .sort(sort)
       .skip(skip)
       .limit(limit),
     Review.countDocuments(filter),
   ]);
   sendList(res, data, { page, limit, total });
+};
+
+/** Average rating, review count and 5→1 star distribution for a product. */
+exports.reviewsSummary = async (req, res) => {
+  const product = await productService.findByIdOrSlug(req.params.idOrSlug, {
+    includeInactive: true,
+  });
+  const filter = {
+    product: product._id,
+    isApproved: true,
+    isHidden: false,
+  };
+  const [summary] = await Review.aggregate([
+    { $match: filter },
+    {
+      $group: {
+        _id: "$product",
+        average: { $avg: "$rating" },
+        total: { $sum: 1 },
+      },
+    },
+  ]);
+  const distributionRows = await Review.aggregate([
+    { $match: filter },
+    { $group: { _id: "$rating", count: { $sum: 1 } } },
+  ]);
+  const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  for (const row of distributionRows)
+    if (row._id >= 1 && row._id <= 5) distribution[row._id] = row.count;
+  sendSuccess(res, {
+    average: summary ? Math.round(summary.average * 10) / 10 : 0,
+    total: summary ? summary.total : 0,
+    distribution,
+  });
 };
 
 exports.adminList = async (req, res) => {

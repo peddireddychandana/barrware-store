@@ -16,6 +16,8 @@ const InvoicePage = lazy(() => import("@/views/InvoicePage"));
 const TrackOrderPage = lazy(() => import("@/views/TrackOrderPage"));
 const WishlistPage = lazy(() => import("@/views/WishlistPage"));
 const ProfilePage = lazy(() => import("@/views/ProfilePage"));
+const AccountPage = lazy(() => import("@/views/AccountPage"));
+const HelpPage = lazy(() => import("@/views/HelpPage"));
 const ForgotPasswordPage = lazy(() => import("@/views/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/views/ResetPasswordPage"));
 const AboutPage = lazy(() => import("@/views/AboutPage"));
@@ -83,6 +85,8 @@ const App = () => (
         <Route path="/track-order" element={<TrackOrderPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/help" element={<HelpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/about" element={<AboutPage />} />

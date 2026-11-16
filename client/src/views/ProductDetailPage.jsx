@@ -1,8 +1,21 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "@/components/AppLink";
+import { useTranslation } from "react-i18next";
 import { useParams, useRouter } from "@/lib/router";
-import { ArrowLeft, Check, Heart, Minus, Plus, ShoppingBag, Zap } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Headphones,
+  Heart,
+  Minus,
+  Plus,
+  RotateCcw,
+  ShieldCheck,
+  ShoppingCart,
+  Truck,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -23,20 +36,60 @@ const getStockLabel = (stock, threshold = LOW_STOCK_THRESHOLD) => {
   return { text: "In stock", className: "text-primary" };
 };
 
-const getSpecRows = (product) => {
-  const base = [
-    ["Material", product.material],
-    ["Colour", product.colour],
-    ["Size", product.size],
-    ["Capacity", product.capacity],
-    ["Weight", product.weight],
-    ["SKU", product.sku],
-  ].map(([key, value]) => ({ key, value }));
-  const baseKeys = new Set(base.map(({ key }) => key.toLowerCase()));
-  const extra = (product.specifications ?? []).filter(
-    ({ key }) => !baseKeys.has(key.toLowerCase()),
+const titleCase = (value) =>
+  String(value || "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const formatDimensions = (dimensions) => {
+  if (!dimensions) return "";
+  const { length, width, height } = dimensions;
+  if (!length && !width && !height) return "";
+  return [length, width, height]
+    .map((value) => (value ? `${value}` : "0"))
+    .join(" × ") + " cm";
+};
+
+const buildInformationRows = (product, t) => {
+  const notAvailable = t("product.notAvailable");
+  const rows = [
+    [t("product.brand"), product.brand || product.vendor],
+    [t("product.category"), product.category],
+    [t("product.productType"), titleCase(product.productType)],
+    [t("product.material"), product.material],
+    [t("product.colour"), product.colour],
+    [t("product.finish"), product.finish],
+    [t("product.design"), product.design],
+    [t("product.baseType"), product.baseType],
+    [t("product.craftsmanship"), product.craftsmanship],
+    [t("product.size"), product.size],
+    [t("product.capacity"), product.capacity],
+    [t("product.weight"), product.weight],
+    [t("product.dimensions"), formatDimensions(product.dimensions)],
+    [t("product.packageContents"), product.packageContents],
+    [t("product.countryOfOrigin"), product.countryOfOrigin],
+    [t("product.careInstructions"), product.careInstructions],
+    [t("product.modelNumber"), product.modelNumber],
+    [t("product.sku"), product.sku],
+  ].map(([key, value]) => ({ key, value: value || notAvailable }));
+
+  const known = new Set(
+    [
+      "material",
+      "colour",
+      "finish",
+      "design",
+      "size",
+      "capacity",
+      "weight",
+      "sku",
+    ].map((key) => key.toLowerCase()),
   );
-  return [...base, ...extra].filter((row) => row.value);
+  const extra = (product.specifications ?? [])
+    .filter(({ key }) => key && !known.has(key.toLowerCase()))
+    .map(({ key, value }) => ({ key, value }));
+
+  return [...rows, ...extra];
 };
 
 const Gallery = ({ product }) => {
@@ -137,6 +190,7 @@ const NotFoundMessage = () => (
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
+  const { t } = useTranslation();
   const router = useRouter();
   const { addToCart } = useCart();
   const { isWishlisted, toggle: toggleWishlist } = useWishlist();
@@ -190,7 +244,7 @@ const ProductDetailPage = () => {
   );
   const isOutOfStock = stockValue <= 0;
   const maxQuantity = Math.max(stockValue, 1);
-  const specRows = getSpecRows(product);
+  const specRows = buildInformationRows(product, t);
   const variantLabel = selectedVariant
     ? selectedVariant.variantName || selectedVariant.colorName || ""
     : "";
@@ -317,7 +371,7 @@ const ProductDetailPage = () => {
               disabled={isOutOfStock || isBusy}
               className="flex-1 min-w-[160px] h-11 gradient-neon text-primary-foreground rounded-full text-sm font-semibold uppercase tracking-widest flex items-center justify-center gap-2 neon-glow disabled:opacity-50"
             >
-              <ShoppingBag className="w-4 h-4" /> Add to Cart
+                <ShoppingCart className="w-4 h-4" /> Add to Cart
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -331,7 +385,7 @@ const ProductDetailPage = () => {
 
           {product.features?.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-2xl font-display mb-3">FEATURES</h2>
+              <h2 className="text-2xl font-display mb-3">{t("product.features")}</h2>
               <ul className="space-y-2">
                 {product.features.map((feature) => (
                   <li
@@ -350,7 +404,7 @@ const ProductDetailPage = () => {
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 mt-14">
         <section>
-          <h2 className="text-3xl font-display mb-4">DESCRIPTION</h2>
+          <h2 className="text-3xl font-display mb-4">{t("product.description")}</h2>
           {/<[a-z][\s\S]*>/i.test(product.description || "") ? (
             <div
               className="product-rich-text text-muted-foreground space-y-3"
@@ -372,17 +426,57 @@ const ProductDetailPage = () => {
           )}
         </section>
         <section>
-          <h2 className="text-3xl font-display mb-4">SPECIFICATIONS</h2>
+          <h2 className="text-3xl font-display mb-4">{t("product.productInformation")}</h2>
           <dl className="bg-card border border-border rounded-2xl divide-y divide-border">
             {specRows.map(({ key, value }) => (
               <div key={key} className="flex justify-between gap-4 px-5 py-3 text-sm">
                 <dt className="text-muted-foreground">{key}</dt>
-                <dd className="font-medium text-right">{value}</dd>
+                <dd className="font-medium text-right break-words max-w-[60%]">{value}</dd>
               </div>
             ))}
           </dl>
         </section>
       </div>
+
+      <section className="mt-14 rounded-2xl border border-border bg-card p-6 md:p-8">
+        <h2 className="text-3xl font-display mb-6">
+          SHOP WITH <span className="text-gradient">CONFIDENCE</span>
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            {
+              icon: ShieldCheck,
+              title: t("assurance.securePayments"),
+              description: t("assurance.securePaymentsDesc"),
+            },
+            {
+              icon: Truck,
+              title: t("assurance.cod"),
+              description: t("assurance.codDesc"),
+            },
+            {
+              icon: RotateCcw,
+              title: t("assurance.returns", { days: 7 }),
+              description: t("assurance.returnsDesc", { days: 7 }),
+            },
+            {
+              icon: Headphones,
+              title: t("assurance.support"),
+              description: t("assurance.supportDesc"),
+            },
+          ].map(({ icon: Icon, title, description }) => (
+            <div key={title} className="flex items-start gap-3">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Icon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">{title}</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <ProductReviews product={product} />
 

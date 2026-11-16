@@ -33,10 +33,11 @@ const footerLinks = {
   account: [
     { label: "Our Story", href: "/about" },
     { label: "Contact Us", href: "/contact" },
+    { label: "Help Centre", href: "/help" },
+    { label: "My Account", href: "/account" },
     { label: "My Orders", href: "/orders" },
     { label: "Track Order", href: "/track-order" },
     { label: "My Wishlist", href: "/wishlist" },
-    { label: "My Profile", href: "/profile" },
     { label: "Forgot Password", href: "/forgot-password" },
   ],
 };

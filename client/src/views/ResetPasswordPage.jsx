@@ -71,6 +71,7 @@ const ResetPasswordForm = () => {
       <FormField
         label="New password"
         type="password"
+        toggleable
         value={form.password}
         onChange={setField("password")}
         autoComplete="new-password"
@@ -78,6 +79,7 @@ const ResetPasswordForm = () => {
       <FormField
         label="Confirm password"
         type="password"
+        toggleable
         value={form.confirmPassword}
         onChange={setField("confirmPassword")}
         autoComplete="new-password"

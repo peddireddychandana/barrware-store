@@ -17,6 +17,14 @@ const phone = z
   .string()
   .trim()
   .regex(/^[0-9+\-\s]{7,15}$/, "Enter a valid phone number");
+const countryCode = z
+  .string()
+  .trim()
+  .regex(/^\+\d{1,4}$/, "Enter a valid country code");
+const localMobile = z
+  .string()
+  .trim()
+  .regex(/^\d{7,15}$/, "Enter a valid mobile number");
 
 const withPasswordConfirm = (shape) =>
   z.object(shape).refine((d) => d.password === d.confirmPassword, {
@@ -129,6 +137,14 @@ const productFields = {
   productType: z.string().trim().min(1),
   material: z.string().trim().optional(),
   colour: z.string().trim().optional(),
+  finish: z.string().trim().optional(),
+  design: z.string().trim().optional(),
+  baseType: z.string().trim().optional(),
+  craftsmanship: z.string().trim().optional(),
+  packageContents: z.string().trim().optional(),
+  countryOfOrigin: z.string().trim().optional(),
+  careInstructions: z.string().trim().optional(),
+  modelNumber: z.string().trim().optional(),
   size: z.string().trim().optional(),
   capacity: z.string().trim().optional(),
   weight: z.string().trim().optional(),
@@ -196,11 +212,34 @@ module.exports = {
     email,
     password: z.string().min(1, "Password is required"),
   }),
+  otpSend: z.object({
+    countryCode,
+    mobile: localMobile,
+  }),
+  otpVerify: z.object({
+    countryCode,
+    mobile: localMobile,
+    otp: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code"),
+  }),
   updateMe: z.object({
     name: z.string().trim().min(2).max(80).optional(),
     phone: phone.or(z.literal("")).optional(),
     address: address.optional(),
   }),
+  changePassword: z
+    .object({
+      currentPassword: z.string().min(1, "Current password is required"),
+      password,
+      confirmPassword: z.string(),
+    })
+    .refine((d) => d.password === d.confirmPassword, {
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    })
+    .refine((d) => d.password !== d.currentPassword, {
+      message: "New password must be different from the current one",
+      path: ["password"],
+    }),
   forgotPassword: z.object({ email }),
   resetPassword: withPasswordConfirm({
     token: z.string().min(10),
@@ -363,6 +402,28 @@ module.exports = {
     rating: z.coerce.number().int().min(1).max(5),
     title: z.string().trim().max(120).optional().default(""),
     comment: z.string().trim().max(2000).optional().default(""),
+    images: z.array(z.string().trim().max(500)).max(5).optional(),
+  }),
+  reviewUpdate: z.object({
+    rating: z.coerce.number().int().min(1).max(5),
+    title: z.string().trim().max(120).optional().default(""),
+    comment: z.string().trim().max(2000).optional().default(""),
+    images: z.array(z.string().trim().max(500)).max(5).optional(),
+  }),
+  supportCreate: z.object({
+    name: z.string().trim().min(2, "Your name is required").max(100),
+    email,
+    category: z.enum([
+      "order",
+      "delivery",
+      "payment",
+      "returns",
+      "product",
+      "account",
+      "other",
+    ]),
+    orderNumber: z.string().trim().max(40).optional().default(""),
+    message: z.string().trim().min(5, "Please add a message").max(2000),
   }),
   newsletter: z.object({ email }),
   productCreate: z.object(productFields).passthrough(),

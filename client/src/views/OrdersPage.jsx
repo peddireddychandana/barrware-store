@@ -127,6 +127,8 @@ const OrdersList = () => {
   );
 };
 
+export { OrdersList };
+
 const OrdersPage = () => (
   <PageShell>
     <PageHeading title="MY" highlight="ORDERS" subtitle="Track and manage your purchases" />

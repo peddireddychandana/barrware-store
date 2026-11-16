@@ -26,6 +26,14 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
     phone: { type: String, trim: true, default: "" },
+    /** Full international mobile (country code + number), used for OTP login. */
+    mobile: {
+      type: String,
+      trim: true,
+      default: "",
+      index: { unique: true, partialFilterExpression: { mobile: { $gt: "" } } },
+    },
+    phoneVerified: { type: Boolean, default: false },
     address: {
       fullName: { type: String, trim: true, default: "" },
       phone: { type: String, trim: true, default: "" },
@@ -56,6 +64,10 @@ const userSchema = new mongoose.Schema(
     },
     resetPasswordToken: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
+    otpHash: { type: String, select: false },
+    otpExpiresAt: { type: Date, select: false },
+    otpResendAvailableAt: { type: Date, select: false },
+    otpAttempts: { type: Number, default: 0, select: false },
   },
   {
     timestamps: true,
@@ -64,6 +76,10 @@ const userSchema = new mongoose.Schema(
         delete ret.password;
         delete ret.resetPasswordToken;
         delete ret.resetPasswordExpires;
+        delete ret.otpHash;
+        delete ret.otpExpiresAt;
+        delete ret.otpResendAvailableAt;
+        delete ret.otpAttempts;
         delete ret.__v;
         delete ret.updatedAt;
         return ret;

@@ -45,11 +45,16 @@ api.interceptors.response.use(
 
 /**
  * Reads the server's `{ success: false, message }` envelope into a plain Error message.
+ * Network-level failures (server down, blocked request) get a clearer message.
  *
  * @param {unknown} error
  * @returns {string}
  */
-export const getErrorMessage = (error) =>
-  error?.response?.data?.message || error?.message || "Something went wrong";
+export const getErrorMessage = (error) => {
+  if (error?.response?.data?.message) return error.response.data.message;
+  if (!error?.response && error?.message)
+    return "Cannot reach the store server. Please check your connection and try again.";
+  return error?.message || "Something went wrong";
+};
 
 export default api;

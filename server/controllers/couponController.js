@@ -23,6 +23,26 @@ exports.adminList = async (req, res) => {
   sendList(res, data, { page, limit, total });
 };
 
+/** Active coupons a signed-in customer can currently apply at checkout. */
+exports.available = async (_req, res) => {
+  const now = new Date();
+  const coupons = await Coupon.find({
+    isActive: true,
+    startsAt: { $lte: now },
+    $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
+    $expr: {
+      $or: [
+        { $eq: ["$usageLimit", 0] },
+        { $lt: ["$usedCount", "$usageLimit"] },
+      ],
+    },
+  })
+    .sort({ value: -1 })
+    // Public-safe fields only: no internal counters or usage history.
+    .select("code description type value minSubtotal maxDiscount expiresAt");
+  sendSuccess(res, coupons);
+};
+
 exports.create = async (req, res) => {
   const payload = normalizePayload(req.body);
   if (await Coupon.exists({ code: payload.code }))

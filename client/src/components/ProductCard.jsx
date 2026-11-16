@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "@/components/AppLink";
-import { Star, ShoppingBag, Eye, Heart, Check } from "lucide-react";
+import { Star, ShoppingCart, Eye, Heart, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "sonner";
@@ -160,7 +160,7 @@ const ProductCard = ({ product, onQuickView }) => {
                       </>
                     ) : (
                       <>
-                        <ShoppingBag className="w-4 h-4" /> Quick Add
+                        <ShoppingCart className="w-4 h-4" /> Quick Add
                       </>
                     )}
                   </motion.button>

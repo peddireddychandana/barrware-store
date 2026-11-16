@@ -13,6 +13,22 @@ const inquirySchema = new mongoose.Schema(
     phone: { type: String, trim: true, default: "" },
     subject: { type: String, trim: true, maxlength: 140, default: "" },
     message: { type: String, required: true, trim: true, maxlength: 2000 },
+    /** Help-centre requests are filed alongside contact-form inquiries. */
+    category: {
+      type: String,
+      enum: [
+        "order",
+        "delivery",
+        "payment",
+        "returns",
+        "product",
+        "account",
+        "other",
+      ],
+      default: "other",
+      index: true,
+    },
+    orderNumber: { type: String, trim: true, maxlength: 40, default: "" },
     status: {
       type: String,
       enum: ["new", "read", "resolved"],

@@ -8,7 +8,7 @@ const { recalculateProductRating } = require("../services/reviewService");
 const { storeImages, storeWebpImages } = require("../services/uploadService");
 
 exports.createReview = async (req, res) => {
-  const { productId, rating, title, comment } = req.body;
+  const { productId, rating, title, comment, images } = req.body;
   if (!(await Product.exists({ _id: productId, isActive: true })))
     throw new AppError("Product not found", 404);
   if (await Review.exists({ user: req.user._id, product: productId }))
@@ -26,12 +26,41 @@ exports.createReview = async (req, res) => {
     rating,
     title,
     comment,
+    images: images ?? [],
     verifiedPurchase,
   });
   await recalculateProductRating(productId);
   await review.populate("user", "name");
   sendSuccess(res, review, { status: 201, message: "Review submitted" });
 };
+
+/** Lets a customer edit their own review (rating, text and photos). */
+exports.updateReview = async (req, res) => {
+  const review = await Review.findOne({ _id: req.params.id, user: req.user._id });
+  if (!review) throw new AppError("Review not found", 404);
+  const { rating, title, comment, images } = req.body;
+  review.rating = rating;
+  review.title = title;
+  review.comment = comment;
+  if (images !== undefined) review.images = images;
+  await review.save();
+  await recalculateProductRating(review.product);
+  await review.populate("user", "name");
+  sendSuccess(res, review, { message: "Review updated" });
+};
+
+/** Lets a customer delete their own review. */
+exports.deleteReview = async (req, res) => {
+  const review = await Review.findOne({ _id: req.params.id, user: req.user._id });
+  if (!review) throw new AppError("Review not found", 404);
+  await review.deleteOne();
+  await recalculateProductRating(review.product);
+  sendSuccess(res, null, { message: "Review deleted" });
+};
+
+/** Customer photo upload for reviews (signed-in shoppers only). */
+exports.uploadReviewImages = async (req, res) =>
+  sendSuccess(res, { urls: await storeImages(req.files, req) }, { status: 201 });
 
 /** Latest reviews across products, 4-5 star reviews first (newest within each group). */
 exports.latestReviews = async (req, res) => {

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import Link from "@/components/AppLink";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useProducts } from "@/hooks/useCatalog";
 import { formatPrice } from "@/utils/format";
 
@@ -19,7 +19,7 @@ const ShopTheBar = () => {
           className="text-center mb-12"
         >
           <div className="inline-flex items-center gap-2 text-primary font-medium tracking-widest uppercase text-sm">
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingCart className="w-4 h-4" />
             Best Sellers
           </div>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-display mt-4">

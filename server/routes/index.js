@@ -1,4 +1,6 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
+const env = require("../config/env");
 const { protect, optionalAuth, restrictTo } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const { imagesUpload } = require("../middleware/upload");
@@ -19,6 +21,17 @@ const reports = require("../controllers/reportsController");
 
 const router = express.Router();
 const adminOnly = [protect, restrictTo("admin")];
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skip: () => env.nodeEnv === "test",
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many OTP requests, please try again later",
+  },
+});
 
 router.get("/health", (_req, res) =>
   res.json({ success: true, data: { status: "ok" } }),
@@ -29,9 +42,17 @@ module.exports.authRoutes = express
   .Router()
   .post("/register", validate(schemas.register), auth.register)
   .post("/login", validate(schemas.login), auth.login)
+  .post("/otp/send", otpLimiter, validate(schemas.otpSend), auth.sendOtp)
+  .post("/otp/verify", otpLimiter, validate(schemas.otpVerify), auth.verifyOtp)
   .post("/logout", auth.logout)
   .get("/me", protect, auth.me)
   .put("/me", protect, validate(schemas.updateMe), auth.updateMe)
+  .put(
+    "/password",
+    protect,
+    validate(schemas.changePassword),
+    auth.changePassword,
+  )
   .post(
     "/forgot-password",
     validate(schemas.forgotPassword),
@@ -42,6 +63,7 @@ module.exports.authRoutes = express
 router.get("/products", products.list);
 router.get("/products/filters", products.filters);
 router.get("/products/slug-check", ...adminOnly, products.slugCheck);
+router.get("/products/:idOrSlug/reviews/summary", products.reviewsSummary);
 router.get("/products/:idOrSlug/reviews", products.reviews);
 router.get("/products/:idOrSlug", products.getOne);
 router.post(
@@ -106,6 +128,12 @@ router.delete("/categories/:id", ...adminOnly, categories.remove);
 
 router.post("/uploads", ...adminOnly, imagesUpload, misc.upload);
 router.post("/uploads/webp", ...adminOnly, imagesUpload, misc.uploadWebp);
+router.post(
+  "/uploads/review-images",
+  protect,
+  imagesUpload,
+  misc.uploadReviewImages,
+);
 router.post("/newsletter", validate(schemas.newsletter), misc.subscribe);
 router.post(
   "/newsletter/unsubscribe",
@@ -113,6 +141,11 @@ router.post(
   inquiries.unsubscribe,
 );
 router.post("/contact", validate(schemas.inquiryCreate), inquiries.create);
+router.post(
+  "/support",
+  validate(schemas.supportCreate),
+  inquiries.createSupportRequest,
+);
 
 router.get("/reviews", misc.latestReviews);
 router.post(
@@ -121,6 +154,13 @@ router.post(
   validate(schemas.createReview),
   misc.createReview,
 );
+router.put(
+  "/reviews/:id",
+  protect,
+  validate(schemas.reviewUpdate),
+  misc.updateReview,
+);
+router.delete("/reviews/:id", protect, misc.deleteReview);
 
 router.post("/cart/quote", validate(schemas.cartQuote), cart.quote);
 router.post("/cart/kit", protect, validate(schemas.kitItems), cart.addKit);
@@ -144,6 +184,9 @@ router.delete("/cart/:productId", protect, cart.remove);
 
 router.get("/kit/config", cart.kitConfig);
 router.post("/kit/quote", validate(schemas.kitItems), cart.kitQuote);
+
+router.get("/coupons/available", protect, coupons.available);
+router.get("/notifications", protect, orders.myNotifications);
 
 router.post(
   "/orders",

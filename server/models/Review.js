@@ -12,6 +12,8 @@ const reviewSchema = new mongoose.Schema(
     rating: { type: Number, required: true, min: 1, max: 5 },
     title: { type: String, trim: true, default: "", maxlength: 120 },
     comment: { type: String, trim: true, default: "", maxlength: 2000 },
+    /** Customer-uploaded photo URLs (max 5, stored via /uploads/review-images). */
+    images: { type: [String], default: [] },
     verifiedPurchase: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: true },
     isHidden: { type: Boolean, default: false },

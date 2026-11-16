@@ -16,7 +16,6 @@ const TrendingCarousel = lazy(() => import("@/components/TrendingCarousel"));
 const Lookbook = lazy(() => import("@/components/Lookbook"));
 const Reviews = lazy(() => import("@/components/Reviews"));
 const ShopTheBar = lazy(() => import("@/components/ShopTheBar"));
-const Newsletter = lazy(() => import("@/components/Newsletter"));
 
 const SectionFallback = () => (
   <div className="h-[400px] w-full bg-gradient-to-b from-background to-card animate-pulse" />
@@ -57,9 +56,6 @@ const Index = () => {
         </Suspense>
         <Suspense fallback={<SectionFallback />}>
           <ShopTheBar />
-        </Suspense>
-        <Suspense fallback={<SectionFallback />}>
-          <Newsletter />
         </Suspense>
       </main>
       <Footer />
