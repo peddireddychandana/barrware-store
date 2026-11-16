@@ -5,7 +5,11 @@ const Subscriber = require("../models/Subscriber");
 const AppError = require("../utils/AppError");
 const { sendSuccess, sendList, parsePagination } = require("../utils/response");
 const { recalculateProductRating } = require("../services/reviewService");
-const { storeImages, storeWebpImages } = require("../services/uploadService");
+const {
+  storeImages,
+  storeWebpImages,
+  findStoredUpload,
+} = require("../services/uploadService");
 
 exports.createReview = async (req, res) => {
   const { productId, rating, title, comment, images } = req.body;
@@ -61,6 +65,16 @@ exports.deleteReview = async (req, res) => {
 /** Customer photo upload for reviews (signed-in shoppers only). */
 exports.uploadReviewImages = async (req, res) =>
   sendSuccess(res, { urls: await storeImages(req.files, req) }, { status: 201 });
+
+/** Serves an upload backed up in MongoDB when it is missing from local disk. */
+exports.serveUpload = async (req, res) => {
+  const upload = await findStoredUpload(req.params.filename);
+  if (!upload) throw new AppError("File not found", 404);
+  res.set("Content-Type", upload.contentType);
+  res.set("Cache-Control", "public, max-age=604800, immutable");
+  res.set("Cross-Origin-Resource-Policy", "cross-origin");
+  res.send(upload.data);
+};
 
 /** Latest reviews across products, 4-5 star reviews first (newest within each group). */
 exports.latestReviews = async (req, res) => {

@@ -55,6 +55,10 @@ async function main() {
 
   if (!env.isProduction) await runSeed();
 
+  const { migrateUploadsToDb } = require("./services/uploadService");
+  const backedUp = await migrateUploadsToDb();
+  if (backedUp) console.log(`Backed up ${backedUp} local upload(s) to MongoDB`);
+
   const server = createApp().listen(env.port, () =>
     console.log(
       `API listening on http://localhost:${env.port} (${env.nodeEnv})`,

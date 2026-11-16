@@ -48,7 +48,7 @@ const ProductListing = ({ fixedCategory, showCategoryTabs = true }) => {
   const [sort, setSort] = useState("popular");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const urlSearch = searchParams.get("search") ?? "";
   const [search, setSearch] = useState(urlSearch);
 

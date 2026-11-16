@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const sharp = require("sharp");
 const {
   app,
   request,
@@ -338,6 +339,40 @@ describe("uploads", () => {
       (await request(app).get(`/uploads/${path.basename(url)}`)).status,
     ).toBe(200);
     fs.unlinkSync(file);
+  });
+
+  it("serves WebP uploads from MongoDB after the disk copy is removed", async () => {
+    const image = await sharp({
+      create: {
+        width: 16,
+        height: 16,
+        channels: 3,
+        background: { r: 220, g: 180, b: 40 },
+      },
+    })
+      .png()
+      .toBuffer();
+    const res = await admin
+      .post("/api/uploads/webp")
+      .attach("images", image, {
+        filename: "saved.png",
+        contentType: "image/png",
+      });
+    expect(res.status).toBe(201);
+    const asset = res.body.data.assets[0];
+    const names = [
+      asset.webpUrl,
+      asset.thumbnailUrl,
+      asset.mediumUrl,
+      asset.largeUrl,
+    ].map((url) => path.basename(url));
+    for (const name of names) {
+      const file = path.join(__dirname, "..", "uploads", name);
+      if (fs.existsSync(file)) fs.unlinkSync(file);
+    }
+    const served = await request(app).get(`/uploads/${names[0]}`);
+    expect(served.status).toBe(200);
+    expect(served.headers["content-type"]).toMatch(/image\/webp/);
   });
 
   it("rejects wrong mime, spoofed content, oversize and non-admin", async () => {

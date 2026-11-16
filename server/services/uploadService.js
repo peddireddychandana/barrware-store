@@ -3,10 +3,72 @@ const path = require("path");
 const crypto = require("crypto");
 const sharp = require("sharp");
 const env = require("../config/env");
+const Upload = require("../models/Upload");
 const { sniffImageType } = require("../middleware/upload");
 const AppError = require("../utils/AppError");
 
 const UPLOAD_DIR = path.join(__dirname, "..", "uploads");
+const IMAGE_TYPES = {
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+async function persistUpload(filename, data, contentType) {
+  try {
+    await Upload.updateOne(
+      { filename },
+      { $set: { filename, data, contentType, size: data.length } },
+      { upsert: true },
+    );
+  } catch (error) {
+    console.warn(`Could not persist upload ${filename}: ${error.message}`);
+  }
+}
+
+async function findStoredUpload(filename) {
+  const safe = path.basename(String(filename || ""));
+  if (!safe || safe !== filename) return null;
+  const stored = await Upload.collection.findOne({ filename: safe });
+  if (!stored?.data) return null;
+  const data = Buffer.isBuffer(stored.data)
+    ? stored.data
+    : Buffer.from(stored.data.buffer ?? stored.data.value());
+  return { contentType: stored.contentType, data };
+}
+
+async function migrateUploadsToDb() {
+  let files;
+  try {
+    files = await fs.readdir(UPLOAD_DIR);
+  } catch {
+    return 0;
+  }
+  const images = files.filter((name) =>
+    Object.keys(IMAGE_TYPES).includes(path.extname(name).slice(1).toLowerCase()),
+  );
+  if (!images.length) return 0;
+  const existing = new Set(
+    (await Upload.find({ filename: { $in: images } }).select("filename").lean())
+      .map((item) => item.filename),
+  );
+  let count = 0;
+  for (const name of images) {
+    if (existing.has(name)) continue;
+    try {
+      const data = await fs.readFile(path.join(UPLOAD_DIR, name));
+      const type = IMAGE_TYPES[path.extname(name).slice(1).toLowerCase()];
+      await Upload.create({ filename: name, data, contentType: type, size: data.length });
+      count += 1;
+    } catch (error) {
+      console.warn(`Could not back up upload ${name}: ${error.message}`);
+    }
+  }
+  return count;
+}
+
+const requestBase = (req) =>
+  `${req.protocol}://${req.get("host")}`.replace(/\/$/, "");
 const cloudinaryEnabled = () =>
   Boolean(
     env.cloudinary.cloudName &&
@@ -48,12 +110,14 @@ async function storeImages(files, req) {
   if (cloudinaryEnabled())
     return Promise.all(files.map((f) => uploadToCloudinary(f.buffer)));
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  const base = env.serverUrl || `${req.protocol}://${req.get("host")}`;
+  const base = requestBase(req);
   return Promise.all(
     files.map(async (file) => {
-      const name = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${sniffImageType(file.buffer)}`;
+      const type = sniffImageType(file.buffer);
+      const name = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${type}`;
       await fs.writeFile(path.join(UPLOAD_DIR, name), file.buffer);
-      return `${base.replace(/\/$/, "")}/uploads/${name}`;
+      await persistUpload(name, file.buffer, IMAGE_TYPES[type]);
+      return `${base}/uploads/${name}`;
     }),
   );
 }
@@ -86,10 +150,7 @@ async function storeWebpImages(files, req) {
 
   const useCloudinary = cloudinaryEnabled();
   if (!useCloudinary) await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  const base = (env.serverUrl || `${req.protocol}://${req.get("host")}`).replace(
-    /\/$/,
-    "",
-  );
+  const base = requestBase(req);
 
   return Promise.all(
     files.map(async (file) => {
@@ -111,6 +172,7 @@ async function storeWebpImages(files, req) {
         } else {
           const filename = `${stamp}-${key}.webp`;
           await fs.writeFile(path.join(UPLOAD_DIR, filename), rendered.data);
+          await persistUpload(filename, rendered.data, IMAGE_TYPES.webp);
           urls[key] = `${base}/uploads/${filename}`;
         }
       }
@@ -129,4 +191,10 @@ async function storeWebpImages(files, req) {
   );
 }
 
-module.exports = { storeImages, storeWebpImages, UPLOAD_DIR };
+module.exports = {
+  storeImages,
+  storeWebpImages,
+  findStoredUpload,
+  migrateUploadsToDb,
+  UPLOAD_DIR,
+};

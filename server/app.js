@@ -10,6 +10,7 @@ const csrfGuard = require("./middleware/csrf");
 const { notFound, errorHandler } = require("./middleware/error");
 const { apiRoutes, authRoutes } = require("./routes");
 const sitemapRoutes = require("./routes/sitemap");
+const misc = require("./controllers/miscController");
 const { UPLOAD_DIR } = require("./services/uploadService");
 
 /** Builds the Express app (no listening), so tests can mount it with supertest. */
@@ -42,6 +43,7 @@ function createApp() {
     "/uploads",
     express.static(UPLOAD_DIR, { maxAge: "7d", index: false }),
   );
+  app.get("/uploads/:filename", misc.serveUpload);
   app.use("/api", limiter(15 * 60 * 1000, env.apiRateLimit));
   const isSessionCheck = (req) => req.method === "GET" && req.path === "/me";
   app.use("/api/auth", limiter(15 * 60 * 1000, 30, isSessionCheck), authRoutes);
