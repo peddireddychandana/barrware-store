@@ -114,7 +114,11 @@ const TagsInput = ({ value, onChange }) => {
 const FeatureList = ({ features, onChange }) => (
   <div className="space-y-2">
     {features.map((feature, index) => (
-      <div key={index} className="flex gap-2">
+      <div key={index} className="flex items-center gap-2">
+        <Circle
+          aria-hidden="true"
+          className="w-2 h-2 shrink-0 fill-current text-primary"
+        />
         <input
           aria-label={`Key feature ${index + 1}`}
           value={feature}
@@ -124,13 +128,13 @@ const FeatureList = ({ features, onChange }) => (
             )
           }
           placeholder="e.g. Leak-proof silicone seal"
-          className={inputClass}
+          className={`${inputClass} min-w-0 flex-1`}
         />
         <button
           type="button"
-          aria-label="Remove feature"
+          aria-label={`Remove feature ${index + 1}`}
           onClick={() => onChange(features.filter((_, i) => i !== index))}
-          className="p-2 text-muted-foreground hover:text-destructive"
+          className="p-2 shrink-0 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -141,7 +145,7 @@ const FeatureList = ({ features, onChange }) => (
       onClick={() => onChange([...features, ""])}
       className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
     >
-      <Plus className="w-4 h-4" /> Add feature
+      <Plus className="w-4 h-4" /> Add Point
     </button>
   </div>
 );
@@ -445,6 +449,15 @@ const AdminProductEditorPage = () => {
                     />
                   </Field>
                 </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    KEY FEATURE HIGHLIGHTS (BULLET POINTS)
+                  </p>
+                  <FeatureList
+                    features={form.keyFeatures}
+                    onChange={(features) => patch({ keyFeatures: features })}
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <div className="flex items-end gap-2">
@@ -558,12 +571,6 @@ const AdminProductEditorPage = () => {
               </Panel>
 
               <Panel title="Description" className="p-5 space-y-4">
-                <Field label="Key features">
-                  <FeatureList
-                    features={form.keyFeatures}
-                    onChange={(features) => patch({ keyFeatures: features })}
-                  />
-                </Field>
                 <Field label="Long description">
                   <textarea
                     value={form.description}

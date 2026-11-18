@@ -120,6 +120,22 @@ describe("admin product editor", () => {
     expect(product.stock).toBe(8);
   });
 
+  it("persists key features and returns them when editing", async () => {
+    const keyFeatures = [
+      "Premium food-grade stainless steel",
+      "Leak-proof design for spill-free shaking",
+    ];
+    const updated = await admin
+      .put(`/api/products/${productId}`)
+      .send({ keyFeatures });
+    expect(updated.status).toBe(200);
+    expect(updated.body.data.keyFeatures).toEqual(keyFeatures);
+    expect(updated.body.data.features).toEqual(keyFeatures);
+
+    const reloaded = await admin.get(`/api/admin/products/${productId}`);
+    expect(reloaded.body.data.keyFeatures).toEqual(keyFeatures);
+  });
+
   it("rejects duplicate variant SKUs with 409", async () => {
     const res = await admin
       .put(`/api/products/${productId}`)

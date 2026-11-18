@@ -49,6 +49,11 @@ services:
         sync: false
       - key: UPI_PAYEE_NAME
         sync: false
+      # Optional: Gemini API key for the AI product assistant (free tier available)
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
 
   - type: web
     name: barware-store-client

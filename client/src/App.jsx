@@ -3,6 +3,7 @@ import { Outlet, Route, Routes, useLocation, useParams } from "react-router-dom"
 
 import Index from "@/views/Index";
 import AdminShell from "@/components/admin/AdminShell";
+import AIAssistantWidget from "@/components/chat/AIAssistantWidget";
 import { trackPageView } from "@/lib/analytics";
 
 const AllProductsPage = lazy(() => import("@/views/AllProductsPage"));
@@ -113,6 +114,7 @@ const App = () => (
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
+    <AIAssistantWidget />
   </>
 );
 

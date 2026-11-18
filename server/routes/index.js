@@ -18,6 +18,7 @@ const addresses = require("../controllers/addressController");
 const inquiries = require("../controllers/inquiryController");
 const coupons = require("../controllers/couponController");
 const reports = require("../controllers/reportsController");
+const ai = require("../controllers/aiController");
 
 const router = express.Router();
 const adminOnly = [protect, restrictTo("admin")];
@@ -32,11 +33,28 @@ const otpLimiter = rateLimit({
     message: "Too many OTP requests, please try again later",
   },
 });
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  skip: () => env.nodeEnv === "test",
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many assistant questions, please try again later",
+  },
+});
 
 router.get("/health", (_req, res) =>
   res.json({ success: true, data: { status: "ok" } }),
 );
 router.get("/payment/config", payments.config);
+router.post(
+  "/ai/product-chat",
+  aiLimiter,
+  validate(schemas.aiProductChat),
+  ai.productChat,
+);
 
 module.exports.authRoutes = express
   .Router()

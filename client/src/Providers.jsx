@@ -8,6 +8,7 @@ import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { LocationProvider } from "@/context/LocationContext";
+import { AIAssistantProvider } from "@/context/AIAssistantContext";
 import { Toaster } from "@/components/ui/sonner";
 import SmoothScroll from "@/components/SmoothScroll";
 import SearchCommand from "@/components/SearchCommand";
@@ -25,13 +26,15 @@ const Providers = ({ children }) => {
             <WishlistProvider>
               <CartProvider>
                 <LocationProvider>
-                  <SmoothScroll>
-                    <SearchCommand />
-                    <PageLoader />
-                    <Toaster />
-                    <CookieConsent />
-                    {children}
-                  </SmoothScroll>
+                  <AIAssistantProvider>
+                    <SmoothScroll>
+                      <SearchCommand />
+                      <PageLoader />
+                      <Toaster />
+                      <CookieConsent />
+                      {children}
+                    </SmoothScroll>
+                  </AIAssistantProvider>
                 </LocationProvider>
               </CartProvider>
             </WishlistProvider>

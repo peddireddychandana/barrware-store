@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useAIAssistant } from "@/context/AIAssistantContext";
 import { useProduct } from "@/hooks/useCatalog";
 import { formatPrice } from "@/utils/format";
 import PageShell from "@/components/PageShell";
@@ -194,6 +195,7 @@ const ProductDetailPage = () => {
   const router = useRouter();
   const { addToCart } = useCart();
   const { isWishlisted, toggle: toggleWishlist } = useWishlist();
+  const { setProduct } = useAIAssistant();
   const { data: product, isLoading, isError } = useProduct(slug);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState("");
@@ -203,6 +205,16 @@ const ProductDetailPage = () => {
     setQuantity(1);
     setSelectedVariantId("");
   }, [slug]);
+
+  useEffect(() => {
+    if (!product?._id) return undefined;
+    setProduct({
+      id: product._id,
+      name: product.name,
+      relatedProducts: product.relatedProducts ?? [],
+    });
+    return () => setProduct(null);
+  }, [product, setProduct]);
 
   if (isLoading) {
     return (
@@ -245,6 +257,9 @@ const ProductDetailPage = () => {
   const isOutOfStock = stockValue <= 0;
   const maxQuantity = Math.max(stockValue, 1);
   const specRows = buildInformationRows(product, t);
+  const keyFeatures = product.keyFeatures?.length
+    ? product.keyFeatures
+    : (product.features ?? []);
   const variantLabel = selectedVariant
     ? selectedVariant.variantName || selectedVariant.colorName || ""
     : "";
@@ -383,11 +398,11 @@ const ProductDetailPage = () => {
             </motion.button>
           </div>
 
-          {product.features?.length > 0 && (
+          {keyFeatures.length > 0 && (
             <div className="mt-8">
               <h2 className="text-2xl font-display mb-3">{t("product.features")}</h2>
               <ul className="space-y-2">
-                {product.features.map((feature) => (
+                {keyFeatures.map((feature) => (
                   <li
                     key={feature}
                     className="flex items-start gap-2 text-sm text-muted-foreground"

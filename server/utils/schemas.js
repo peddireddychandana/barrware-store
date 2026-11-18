@@ -426,6 +426,20 @@ module.exports = {
     message: z.string().trim().min(5, "Please add a message").max(2000),
   }),
   newsletter: z.object({ email }),
+  aiProductChat: z.object({
+    productId: z.string().trim().min(1, "Select a product").max(120),
+    compareProductId: z.string().trim().min(1).max(120).optional(),
+    message: z.string().trim().min(1, "Write a message").max(1000),
+    conversationHistory: z
+      .array(
+        z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string().trim().min(1).max(2000),
+        }),
+      )
+      .max(12)
+      .default([]),
+  }),
   productCreate: z.object(productFields).passthrough(),
   productUpdate: z.object(productFields).partial().passthrough(),
   categoryCreate: z.object({

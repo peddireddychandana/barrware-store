@@ -221,6 +221,31 @@
       "deliveryA": "Orders are usually dispatched within 1–2 business days and take 3–7 business days for most PIN codes. Shipping is free above ₹999; below that a flat ₹79 shipping fee applies."
     }
   },
+  "chat": {
+    "open": "Open AI product assistant",
+    "title": "BARWARE AI ASSISTANT",
+    "subtitle": "Product questions, answered",
+    "discussing": "Discussing:",
+    "noProduct": "Open a product to ask me about it.",
+    "placeholder": "Ask about this product...",
+    "send": "Send message",
+    "clear": "Clear chat",
+    "retry": "Retry",
+    "thinking": "Thinking",
+    "compareLabel": "Compare with",
+    "compareNone": "No comparison",
+    "comparePrompt": "Compare these two products",
+    "suggestions": {
+      "summarize": "Summarize this product",
+      "features": "What are the main features?",
+      "material": "What material is it made of?",
+      "special": "What is special about this product?",
+      "usage": "How can I use this product?",
+      "contents": "What comes with this product?",
+      "beginner": "Is it suitable for beginners?",
+      "specifications": "Explain the specifications"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "save": "Save",

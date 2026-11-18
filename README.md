@@ -61,6 +61,10 @@ The API starts a persistent MongoDB on `127.0.0.1:27017` (data in `server/.mongo
 | `BREVO_API_KEY` / `RESEND_API_KEY` | Optional transactional email. Set **one**. Brevo free tier = 300 emails/day; Resend free tier = 3,000 emails/month. When neither is set, emails are skipped and logged only. |
 | `MAIL_FROM`, `MAIL_FROM_NAME` | Sender address (must be verified with Brevo/Resend) and display name (default `VYRNT`). |
 | `UPI_ID`, `UPI_PAYEE_NAME` | Your UPI ID (e.g. `yourname@okhdfcbank`) and the payee name shown in the customer's UPI app. When `UPI_ID` is blank, UPI is hidden at checkout and only COD is offered. |
+| `GEMINI_API_KEY` | Optional server-only key for the floating AI product assistant. Create one on the Gemini free tier at https://aistudio.google.com/apikey. Without it, the chat widget shows a friendly "not configured" message. |
+| `GEMINI_MODEL` | Optional Gemini model override (default `gemini-3.8-flash`). |
+
+The AI assistant builds each answer from the current MongoDB product document and never receives the API key on the client. On a product page, choose a related product in the widget to ask comparison questions.
 
 `client/.env.local`: `VITE_API_URL=http://localhost:5000/api` plus optional `VITE_STORE_ADDRESS`, `VITE_STORE_PHONE`, `VITE_STORE_EMAIL`, `VITE_COMPANY_LEGAL_NAME`, `VITE_COMPANY_GSTIN`, `VITE_COMPANY_JURISDICTION` and `VITE_SUPPORT_HOURS` (used on the footer and legal pages).
 
@@ -105,6 +109,7 @@ All responses use `{ success, data, message? }`; lists add `pagination: { page, 
 | GET | `/api/products` | public | search, category, productType, material, minPrice, maxPrice, sort, featured, bestSeller, premium, page, limit |
 | GET | `/api/products/filters` | public | materials, productTypes, priceRange |
 | GET | `/api/products/:idOrSlug` | public | includes relatedProducts |
+| POST | `/api/ai/product-chat` | public | `{ productId, message, conversationHistory?, compareProductId? }` - AI answer grounded in stored product data |
 | GET | `/api/products/:idOrSlug/reviews` | public | paginated |
 | POST / PUT / DELETE | `/api/products`, `/api/products/:id` | admin | |
 | GET | `/api/categories` | public | with productCount |
@@ -176,6 +181,7 @@ Dashboard > **New > Blueprint** > select the repo. Render reads `render.yaml` an
 | api | `CLIENT_URL` | client URL, e.g. `https://barware-store-client.onrender.com` (no trailing slash) |
 | api | `SERVER_URL` | API URL, e.g. `https://barware-store-api.onrender.com` |
 | api | `UPI_ID` / `UPI_PAYEE_NAME` | your UPI ID (e.g. `yourname@okhdfcbank`) and payee name; leave `UPI_ID` blank to disable UPI |
+| api | `GEMINI_API_KEY` / `GEMINI_MODEL` | optional Gemini key for the AI assistant (free tier) and optional model override |
 | client | `VITE_API_URL` | API URL **plus `/api`**, e.g. `https://barware-store-api.onrender.com/api` |
 | client | `VITE_STORE_ADDRESS` / `_PHONE` / `_EMAIL` | your store details |
 | client | `VITE_COMPANY_LEGAL_NAME` / `_GSTIN` / `_JURISDICTION` / `VITE_SUPPORT_HOURS` | company details shown on the legal pages |

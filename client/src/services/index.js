@@ -214,6 +214,10 @@ export const supportService = {
   send: (body) => data(api.post("/support", body)),
 };
 
+export const aiService = {
+  productChat: (body) => data(api.post("/ai/product-chat", body)),
+};
+
 export const accountService = {
   coupons: () => data(api.get("/coupons/available")),
   notifications: () => data(api.get("/notifications")),

@@ -81,6 +81,13 @@ module.exports = {
     resendCooldownSeconds: Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 60,
     maxAttempts: Number(process.env.OTP_MAX_ATTEMPTS) || 5,
   },
+  ai: {
+    // Gemini API (free tier available). The key is server-side only - never send it to the client.
+    apiKey: (process.env.GEMINI_API_KEY || "").trim(),
+    model: /^[a-zA-Z0-9._-]+$/.test(process.env.GEMINI_MODEL || "")
+      ? process.env.GEMINI_MODEL
+      : "gemini-3.8-flash",
+  },
   sms: {
     // SMS provider for OTP delivery. Empty means no provider configured.
     provider: (process.env.SMS_PROVIDER || "").trim().toLowerCase(),
