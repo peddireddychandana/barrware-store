@@ -136,6 +136,29 @@ describe("admin product editor", () => {
     expect(reloaded.body.data.keyFeatures).toEqual(keyFeatures);
   });
 
+  it("persists rich description formatting and strips unsafe markup", async () => {
+    const richDescription =
+      '<h2>Care</h2><p><strong>Hand wash</strong> <a href="https://example.com" target="_blank" rel="noopener noreferrer nofollow">guide</a> <a href="javascript:alert(1)">unsafe</a></p><ul><li>Item one</li><li>Item two</li></ul><ol><li>First</li></ol><table><tbody><tr><th>Material</th><td>Brass</td></tr></tbody></table><script>alert(1)</script>';
+    const updated = await admin
+      .put(`/api/products/${productId}`)
+      .send({ description: richDescription });
+
+    expect(updated.status).toBe(200);
+    const saved = updated.body.data.description;
+    expect(saved).toContain("<h2>Care</h2>");
+    expect(saved).toContain("<strong>Hand wash</strong>");
+    expect(saved).toContain("<ul>");
+    expect(saved).toContain("<ol>");
+    expect(saved).toContain("<table>");
+    expect(saved).toContain('href="https://example.com"');
+    expect(saved).toContain('rel="noopener noreferrer nofollow"');
+    expect(saved).not.toContain("javascript:");
+    expect(saved).not.toContain("<script");
+
+    const reloaded = await admin.get(`/api/admin/products/${productId}`);
+    expect(reloaded.body.data.description).toBe(saved);
+  });
+
   it("rejects duplicate variant SKUs with 409", async () => {
     const res = await admin
       .put(`/api/products/${productId}`)

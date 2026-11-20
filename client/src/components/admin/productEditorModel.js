@@ -143,22 +143,23 @@ export const emptyEditorForm = () => ({
 
 const stringNum = (value) => (value === 0 || value ? String(value) : "");
 
-const htmlToText = (value) => {
-  const text = String(value ?? "");
-  if (!/<[a-z][\s\S]*>/i.test(text)) return text;
-  return text
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<li[^>]*>/gi, "• ")
-    .replace(/<\/(p|div|h[1-6]|li|ul|ol)>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/\n{3,}/g, "\n\n")
+const plainTextToHtml = (value) => {
+  const text = String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
     .trim();
+  if (!text) return "";
+  return text
+    .split(/\n{2,}/)
+    .map((block) => `<p>${block.replace(/\n/g, "<br />")}</p>`)
+    .join("");
+};
+
+const toEditorHtml = (value) => {
+  const text = String(value ?? "");
+  if (!/<[a-z][\s\S]*>/i.test(text)) return plainTextToHtml(text);
+  return text.trim();
 };
 
 export const formFromProduct = (product) => {
@@ -193,7 +194,7 @@ export const formFromProduct = (product) => {
     slugManual: true,
     subtitle: product.subtitle || "",
     keyFeatures,
-    description: htmlToText(product.description),
+    description: toEditorHtml(product.description),
     category: product.category?._id || product.category || "",
     productType: product.productType || "",
     brand: product.brand || product.vendor || "",

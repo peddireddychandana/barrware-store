@@ -22,6 +22,7 @@ import { adminService, categoryService, productService } from "@/services";
 import { getErrorMessage } from "@/services/api";
 import { formatPrice } from "@/utils/format";
 import MediaManager from "@/components/admin/MediaManager";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import VariantManager from "@/components/admin/VariantManager";
 import {
   Field,
@@ -571,15 +572,19 @@ const AdminProductEditorPage = () => {
               </Panel>
 
               <Panel title="Description" className="p-5 space-y-4">
-                <Field label="Long description">
-                  <textarea
+                <div>
+                  <span className="block text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1.5">
+                    Long description
+                  </span>
+                  <RichTextEditor
                     value={form.description}
-                    onChange={setField("description")}
-                    rows={10}
-                    placeholder="Paste or write the full product details here..."
-                    className={inputClass}
+                    onChange={(description) => patch({ description })}
                   />
-                </Field>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    Format the description with headings, bold text, lists, tables and links. The
+                    formatting is shown on the product page.
+                  </p>
+                </div>
               </Panel>
 
               <Panel title="Sales channels" className="p-5">

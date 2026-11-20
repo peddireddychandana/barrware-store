@@ -5,6 +5,7 @@ const Review = require("../models/Review");
 const AppError = require("../utils/AppError");
 const { PRODUCT_TYPES } = require("../config/store");
 const { slugify, escapeRegex } = require("../utils/slugify");
+const { sanitizeDescription } = require("../utils/sanitizeDescription");
 
 const SORTS = {
   price_asc: { price: 1, _id: 1 },
@@ -317,7 +318,7 @@ function buildPatch(input, { isCreate = false } = {}) {
     if (source[field] !== undefined) patch[field] = str(source[field]);
   }
   if (source.description !== undefined)
-    patch.description = String(source.description ?? "");
+    patch.description = sanitizeDescription(source.description);
 
   for (const field of [
     "price",
