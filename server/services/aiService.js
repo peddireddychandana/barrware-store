@@ -201,7 +201,7 @@ async function generateProductAnswer({
           contents,
           generationConfig: { temperature: 0.2, maxOutputTokens: 600 },
         }),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(60000),
       },
     );
   } catch (error) {
